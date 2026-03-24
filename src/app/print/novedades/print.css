@@ -1,0 +1,30 @@
+/* Estilos solo para salida PDF / previsualización de impresión */
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+.print-root {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #1a1a1a;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.print-page {
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  page-break-after: always;
+  break-after: page;
+  padding: 14mm 16mm;
+  position: relative;
+}
+
+.print-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
