@@ -235,11 +235,12 @@ export function NovedadesBuilder() {
             <div key={`${p.name}-${i}`} className="space-y-2 rounded border border-neutral-200 bg-white p-3">
               <DropZone
                 label={`Imagen producto ${i + 1}`}
-                onFile={async (f) =>
+                onFile={async (f) => {
+                  const imageDataUrl = await fileToDataUrl(f);
                   setProducts((prev) =>
-                    prev.map((it, idx) => (idx === i ? { ...it, image: await fileToDataUrl(f) } : it)),
-                  )
-                }
+                    prev.map((it, idx) => (idx === i ? { ...it, image: imageDataUrl } : it)),
+                  );
+                }}
               />
               <input className="w-full rounded border border-neutral-300 px-2 py-1 text-sm" value={p.name} onChange={(e) => setProducts((prev) => prev.map((it, idx) => (idx === i ? { ...it, name: e.target.value } : it)))} placeholder="Nombre" />
               <input className="w-full rounded border border-neutral-300 px-2 py-1 text-sm" value={p.material} onChange={(e) => setProducts((prev) => prev.map((it, idx) => (idx === i ? { ...it, material: e.target.value } : it)))} placeholder="Material" />
