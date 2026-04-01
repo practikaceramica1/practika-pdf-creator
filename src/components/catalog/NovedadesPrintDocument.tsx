@@ -2,9 +2,7 @@ import type { NovedadesCatalog, NovedadesPage } from "@/lib/catalog-types";
 import "@/app/print/novedades/print.css";
 
 const brand = {
-  accent: "#8B4513",
-  muted: "#5c5752",
-  line: "#c9c4be",
+  ink: "#111111",
 };
 
 function CatalogImg({
@@ -23,48 +21,50 @@ function CatalogImg({
   );
 }
 
+function PractikaWordmark({ dark = false }: { dark?: boolean }) {
+  const src = dark ? "/brand/logo-anthracite.png" : "/brand/logo-white.png";
+  return (
+    <div className="mx-auto w-[58mm]">
+      <CatalogImg src={src} alt="Practika Ceramica" className="w-full object-contain" />
+    </div>
+  );
+}
+
 function CoverPage(
   page: Extract<NovedadesPage, { type: "cover" }>,
 ) {
   return (
-    <div className="print-page flex flex-col justify-between border-b-4" style={{ borderColor: brand.accent }}>
-      <header className="flex items-start justify-between gap-6">
-        <div>
-          <p className="text-[10pt] uppercase tracking-[0.2em]" style={{ color: brand.muted }}>
-            Practika Cerámica
-          </p>
-          <h1 className="mt-2 text-[32pt] font-semibold leading-tight tracking-tight">
-            {page.title}
-          </h1>
-          {page.subtitle ? (
-            <p className="mt-2 text-[14pt]" style={{ color: brand.muted }}>
-              {page.subtitle}
-            </p>
-          ) : null}
-        </div>
-        {page.season ? (
-          <div
-            className="shrink-0 rounded px-3 py-1 text-[9pt] font-medium uppercase tracking-wider text-white"
-            style={{ backgroundColor: brand.accent }}
-          >
-            {page.season}
-          </div>
-        ) : null}
+    <div className="print-page practika-stone flex flex-col">
+      <header className="pt-[12mm]">
+        <PractikaWordmark />
       </header>
       {page.hero ? (
-        <div className="mt-6 flex-1 overflow-hidden rounded-sm border" style={{ borderColor: brand.line }}>
+        <div className="mx-[12mm] mt-[11mm] h-[174mm] overflow-hidden border-[2.5mm] border-[#f2eee7]">
           <CatalogImg
             src={page.hero.src}
             alt={page.hero.alt}
-            className="h-full max-h-[180mm] w-full object-cover"
+            className="h-full w-full object-cover"
           />
         </div>
       ) : (
-        <div className="mt-auto flex-1" />
+        <div className="mx-[12mm] mt-[11mm] h-[174mm] border-[2.5mm] border-[#f2eee7]" />
       )}
-      <footer className="mt-8 flex justify-between border-t pt-4 text-[8pt]" style={{ borderColor: brand.line, color: brand.muted }}>
-        <span>www.practikaceramica.com</span>
-        <span>Catálogo de novedades</span>
+      <div className="mt-[9mm] text-center">
+        <h1 className="text-[24pt] font-semibold uppercase tracking-[0.36em] text-[#f3f1ec]">
+          {page.title}
+        </h1>
+        {page.subtitle ? (
+          <p className="mt-1 text-[10pt] tracking-[0.14em] text-[#f3f1ec]">
+            {page.subtitle}
+          </p>
+        ) : null}
+      </div>
+      <footer className="mt-auto pb-[11mm] pt-[8mm] text-center">
+        {page.season ? (
+          <p className="text-[8pt] uppercase tracking-[0.2em] text-[#efeee8]">
+            {page.season}
+          </p>
+        ) : null}
       </footer>
     </div>
   );
@@ -74,14 +74,47 @@ function SectionPage(
   page: Extract<NovedadesPage, { type: "section" }>,
 ) {
   return (
-    <div className="print-page flex flex-col">
-      <div className="mb-8 h-1 w-24" style={{ backgroundColor: brand.accent }} />
-      <h2 className="text-[22pt] font-semibold">{page.heading}</h2>
+    <div className="print-page practika-stone flex flex-col">
+      <header className="pt-[10mm]">
+        <PractikaWordmark />
+      </header>
+      <div className="relative mt-[9mm] flex-1">
+        <div className="absolute left-[8mm] top-[78mm] z-20">
+          <p className="origin-center -rotate-90 text-[16pt] uppercase tracking-[0.22em] text-black/90">
+            {page.heading}
+          </p>
+        </div>
+        <div className="absolute left-[34mm] top-[4mm] h-[176mm] w-[128mm] overflow-hidden">
+          <CatalogImg
+            src="/catalog/placeholder-hero.svg"
+            alt={page.heading}
+            className="h-full w-full object-cover"
+          />
+        </div>
+        <div className="absolute left-[84mm] top-[148mm] z-10 h-[88mm] w-[132mm] overflow-hidden border-[2.5mm] border-white bg-[#dedad0]">
+          <CatalogImg
+            src="/catalog/placeholder-tile.svg"
+            alt={page.heading}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      </div>
       {page.body ? (
-        <p className="mt-6 max-w-prose text-[11pt] leading-relaxed" style={{ color: brand.muted }}>
+        <p className="mt-2 px-[22mm] text-[8pt] leading-relaxed text-black/72">
           {page.body}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function LegendPage(page: Extract<NovedadesPage, { type: "legend" }>) {
+  const src = page.imageSrc || "/catalog/symbology-reference.png";
+  const alt = page.imageAlt || "Symbology";
+
+  return (
+    <div className="print-page">
+      <CatalogImg src={src} alt={alt} className="h-full w-full object-cover" />
     </div>
   );
 }
@@ -99,15 +132,22 @@ function gridColsClass(cols: 2 | 3 | 4) {
 
 function GridPage(page: Extract<NovedadesPage, { type: "grid" }>) {
   return (
-    <div className="print-page">
-      <div className={`grid gap-x-4 gap-y-6 ${gridColsClass(page.columns)}`}>
+    <div className="print-page practika-stone">
+      <header className="pt-[10mm]">
+        <PractikaWordmark />
+      </header>
+      <div className="mx-[12mm] mt-[8mm] border-y border-white/80 py-[2.5mm] text-center">
+        <p className="text-[10pt] uppercase tracking-[0.3em] text-black/80">
+          Novedades
+        </p>
+      </div>
+      <div className={`mx-[12mm] mt-[7mm] grid gap-x-[3mm] gap-y-[3mm] ${gridColsClass(page.columns)}`}>
         {page.products.map((p) => (
           <article
-            key={p.sku}
-            className="flex flex-col border-t pt-3"
-            style={{ borderColor: brand.line }}
+            key={`${p.name}-${p.format ?? "no-format"}`}
+            className="flex flex-col bg-[#e5e0d3] p-[2.2mm]"
           >
-            <div className="mb-2 aspect-square w-full overflow-hidden bg-neutral-100">
+            <div className="mb-[1.8mm] aspect-square w-full overflow-hidden border border-white/90 bg-neutral-100">
               {p.image ? (
                 <CatalogImg
                   src={p.image.src}
@@ -116,17 +156,21 @@ function GridPage(page: Extract<NovedadesPage, { type: "grid" }>) {
                 />
               ) : null}
             </div>
-            <p className="text-[8pt] font-semibold uppercase tracking-wide" style={{ color: brand.accent }}>
-              {p.sku}
-            </p>
-            <h3 className="text-[10pt] font-medium leading-snug">{p.name}</h3>
+            <h3 className="text-[9pt] font-semibold uppercase tracking-[0.05em] leading-snug">
+              {p.name}
+            </h3>
+            {p.material ? (
+              <p className="mt-[0.8mm] text-[7pt] tracking-[0.04em] text-black/70">
+                {p.material}
+              </p>
+            ) : null}
             {p.format ? (
-              <p className="mt-1 text-[8pt]" style={{ color: brand.muted }}>
+              <p className="mt-[0.8mm] text-[7pt] uppercase tracking-[0.06em] text-black/62">
                 {p.format}
               </p>
             ) : null}
             {p.notes ? (
-              <p className="mt-2 text-[7pt] leading-tight" style={{ color: brand.muted }}>
+              <p className="mt-2 text-[7pt] leading-tight text-black/60">
                 {p.notes}
               </p>
             ) : null}
@@ -141,6 +185,8 @@ function renderPage(page: NovedadesPage, index: number) {
   switch (page.type) {
     case "cover":
       return <CoverPage key={`cover-${index}`} {...page} />;
+    case "legend":
+      return <LegendPage key={`legend-${index}`} {...page} />;
     case "section":
       return <SectionPage key={`section-${index}`} {...page} />;
     case "grid":
@@ -152,7 +198,7 @@ function renderPage(page: NovedadesPage, index: number) {
 
 export function NovedadesPrintDocument({ catalog }: { catalog: NovedadesCatalog }) {
   return (
-    <div className="print-root min-h-screen bg-white font-sans">
+    <div className="print-root min-h-screen bg-white font-sans" style={{ color: brand.ink }}>
       {catalog.pages.map((p, i) => renderPage(p, i))}
     </div>
   );

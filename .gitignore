@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local working files / extracted references
+.tmp-idml/
+.tmp-ref/
+.tmp-*/
+.tmp-*.png

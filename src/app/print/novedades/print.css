@@ -16,12 +16,22 @@
 
 .print-page {
   width: 210mm;
-  min-height: 297mm;
+  height: 297mm;
   box-sizing: border-box;
   page-break-after: always;
   break-after: page;
-  padding: 14mm 16mm;
+  padding: 0;
   position: relative;
+  overflow: hidden;
+}
+
+.practika-stone {
+  /* PANTONE 7534 C aprox desde IDML */
+  background: #c6c1b1;
+}
+
+.practika-paper {
+  background: #f6f4ef;
 }
 
 .print-page:last-child {

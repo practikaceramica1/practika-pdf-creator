@@ -8,8 +8,9 @@ export type CatalogImage = {
 };
 
 export type ProductTile = {
-  sku: string;
   name: string;
+  /** Opción seleccionada de `MATERIAL_OPTIONS` */
+  material?: string;
   /** p. ej. "30×60 cm" */
   format?: string;
   /** Ruta bajo /public */
@@ -24,6 +25,12 @@ export type NovedadesPage =
       subtitle?: string;
       season?: string;
       hero?: CatalogImage;
+    }
+  | {
+      type: "legend";
+      /** Si no se indica, usa la referencia importada de página 4 */
+      imageSrc?: string;
+      imageAlt?: string;
     }
   | {
       type: "section";

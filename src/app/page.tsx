@@ -8,23 +8,31 @@ export default function Home() {
           Practika · generador de catálogos
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
-          PDF de novedades
+          Generador de novedades y ofertas
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-neutral-600">
-          Previsualiza el maquetado en{" "}
-          <code className="rounded bg-neutral-100 px-1 py-0.5 text-xs">
-            /print/novedades
-          </code>{" "}
-          y, con el servidor en marcha, descarga el PDF desde la API.
+          Previsualiza los maquetados y descarga PDFs o imagenes para compartir
+          por email y WhatsApp.
         </p>
       </div>
       <ul className="flex flex-col gap-3 text-sm">
+        <li className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          Novedades
+        </li>
         <li>
           <Link
             className="font-medium text-amber-900 underline-offset-4 hover:underline"
             href="/print/novedades"
           >
-            Ver / imprimir catálogo de novedades (navegador)
+            Ver / imprimir catalogo de novedades (navegador)
+          </Link>
+        </li>
+        <li>
+          <Link
+            className="font-medium text-amber-900 underline-offset-4 hover:underline"
+            href="/novedades"
+          >
+            Creador visual de novedades (drag and drop + PNG/PDF)
           </Link>
         </li>
         <li>
@@ -32,15 +40,25 @@ export default function Home() {
             className="font-medium text-amber-900 underline-offset-4 hover:underline"
             href="/api/pdf/novedades"
           >
-            Descargar PDF (requiere servidor activo)
+            Descargar PDF de novedades
           </a>
+        </li>
+        <li className="pt-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          Ofertas
+        </li>
+        <li>
+          <Link
+            className="font-medium text-amber-900 underline-offset-4 hover:underline"
+            href="/ofertas"
+          >
+            Creador visual con drag and drop (PNG/PDF por plantilla)
+          </Link>
         </li>
       </ul>
       <p className="text-xs text-neutral-500">
-        Los datos de ejemplo viven en{" "}
-        <code className="rounded bg-neutral-100 px-1">src/data/novedades-sample.ts</code>.
-        Sustituye imágenes en{" "}
-        <code className="rounded bg-neutral-100 px-1">public/catalog/</code>.
+        Datos de muestra en{" "}
+        <code className="rounded bg-neutral-100 px-1">src/data/novedades-sample.ts</code> y{" "}
+        <code className="rounded bg-neutral-100 px-1">src/data/ofertas-sample.ts</code>.
       </p>
     </div>
   );

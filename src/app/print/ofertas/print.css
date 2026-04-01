@@ -1,0 +1,25 @@
+@page {
+  size: 320mm 180mm;
+  margin: 0;
+}
+
+.offers-root {
+  background: #ffffff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.offer-page {
+  width: 320mm;
+  height: 180mm;
+  box-sizing: border-box;
+  page-break-after: always;
+  break-after: page;
+  position: relative;
+  overflow: hidden;
+}
+
+.offer-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
