@@ -1,5 +1,5 @@
 import "@/app/print/ofertas/print.css";
-import type { OfferItem, OffersCatalog } from "@/lib/offers-types";
+import { logoSrcForVariant, type OfferItem, type OffersCatalog } from "@/lib/offers-types";
 
 const palette = {
   stone: "#c6c1b1",
@@ -14,8 +14,12 @@ function Img({ src, alt, className }: { src: string; alt: string; className?: st
   return <img src={src} alt={alt} className={className} />;
 }
 
-function Logo({ dark = false }: { dark?: boolean }) {
-  const src = dark ? "/brand/logo-anthracite.png" : "/brand/logo-white.png";
+function Logo({ item, dark = false }: { item: OfferItem; dark?: boolean }) {
+  const src = item.logoVariant
+    ? logoSrcForVariant(item.logoVariant)
+    : dark
+      ? "/brand/logo-anthracite.png"
+      : "/brand/logo-white.png";
   return <Img src={src} alt="Practika Ceramica" className="h-auto w-[42mm]" />;
 }
 
@@ -62,7 +66,7 @@ function SplitRightTemplate({ item }: { item: OfferItem }) {
         </div>
       </div>
       <div className="absolute left-[16mm] top-[14mm]">
-        <Logo />
+        <Logo item={item} />
       </div>
       <div className="absolute bottom-[12mm] left-[20mm] rounded bg-white/85 px-5 py-3">
         <p className="text-[8pt] uppercase tracking-[0.18em] text-[#5f4a35]">Practika · Oferta</p>
@@ -80,7 +84,7 @@ function PriceOverlayTemplate({ item }: { item: OfferItem }) {
           <Img src={item.heroImage} alt={`${item.series} ambiente`} className="h-full w-full object-cover" />
         </div>
         <div className="relative border border-black/8 bg-white p-[6mm]">
-          <Logo dark />
+          <Logo item={item} dark />
           <div className="mt-[6mm]">
             <SpecialBadge text={item.specialOfferText} />
           </div>
@@ -109,7 +113,7 @@ function CleanCardTemplate({ item }: { item: OfferItem }) {
           <Img src={item.heroImage} alt={`${item.series} ambiente`} className="h-full w-full object-cover" />
         </div>
         <div className="flex flex-col border border-black/10 bg-white p-[8mm]">
-          <Logo dark />
+          <Logo item={item} dark />
           <div className="mt-[6mm]">
             <SpecialBadge text={item.specialOfferText} />
           </div>
@@ -137,7 +141,7 @@ function HeroFocusTemplate({ item }: { item: OfferItem }) {
       <Img src={item.heroImage} alt={`${item.series} ambiente`} className="h-full w-full object-cover opacity-85" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
       <div className="absolute left-[12mm] top-[10mm]">
-        <Logo />
+        <Logo item={item} />
       </div>
       <div className="absolute right-[12mm] top-[10mm]">
         <SpecialBadge text={item.specialOfferText} />
@@ -165,7 +169,7 @@ function CatalogStripTemplate({ item }: { item: OfferItem }) {
     <div className="offer-page" style={{ background: palette.paper }}>
       <div className="absolute inset-x-0 top-0 h-[18mm]" style={{ background: palette.stone }} />
       <div className="absolute left-[12mm] top-[4mm]">
-        <Logo dark />
+        <Logo item={item} dark />
       </div>
       <div className="absolute right-[12mm] top-[4.5mm]">
         <SpecialBadge text={item.specialOfferText} />
@@ -207,7 +211,7 @@ function MinimalPriceTemplate({ item }: { item: OfferItem }) {
       </div>
       <div className="absolute inset-y-0 right-0 w-[115mm]" style={{ background: palette.stone }}>
         <div className="p-[10mm]">
-          <Logo dark />
+          <Logo item={item} dark />
           <div className="mt-[8mm] inline-block">
             <SpecialBadge text={item.specialOfferText} />
           </div>
@@ -241,7 +245,7 @@ function PriceBannerTemplate({ item }: { item: OfferItem }) {
       </div>
       <div className="absolute inset-x-0 top-0 h-[24mm] bg-black/72" />
       <div className="absolute left-[12mm] top-[6mm]">
-        <Logo />
+        <Logo item={item} />
       </div>
       <div className="absolute right-[12mm] top-[7mm]">
         <SpecialBadge text={item.specialOfferText} />
@@ -273,7 +277,7 @@ function DuoFrameTemplate({ item }: { item: OfferItem }) {
         <Img src={item.tileImage ?? item.heroImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
       </div>
       <div className="absolute right-[12mm] top-[12mm] w-[84mm] rounded bg-white/95 p-[5mm]">
-        <Logo dark />
+        <Logo item={item} dark />
         <div className="mt-[5mm]">
           <SpecialBadge text={item.specialOfferText} />
         </div>
@@ -290,7 +294,7 @@ function EditorialLeftTemplate({ item }: { item: OfferItem }) {
   return (
     <div className="offer-page" style={{ background: palette.stone }}>
       <div className="absolute left-[12mm] top-[12mm] w-[86mm] rounded bg-white p-[6mm]">
-        <Logo dark />
+        <Logo item={item} dark />
         <div className="mt-[6mm] inline-block">
           <SpecialBadge text={item.specialOfferText} />
         </div>
@@ -321,7 +325,7 @@ function TileDominantTemplate({ item }: { item: OfferItem }) {
         <Img src={item.heroImage} alt={`${item.series} ambiente`} className="h-full w-full object-cover" />
       </div>
       <div className="absolute left-[136mm] top-[112mm] w-[174mm] rounded bg-[#f6f4ef] p-[6mm]">
-        <Logo dark />
+        <Logo item={item} dark />
         <div className="mt-[4mm] flex items-start justify-between">
           <div>
             <p className="text-[16pt] font-semibold uppercase leading-tight text-[#111]">

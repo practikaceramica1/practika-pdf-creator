@@ -4,6 +4,14 @@
 import { jsPDF } from "jspdf";
 import { toPng } from "html-to-image";
 import { useMemo, useRef, useState } from "react";
+import { logoSrcForVariant, type LogoVariant } from "@/lib/offers-types";
+
+const logoVariantOptions: { id: LogoVariant; label: string }[] = [
+  { id: "white", label: "Blanco (fondos oscuros)" },
+  { id: "anthracite", label: "Antracita (fondos claros)" },
+  { id: "beige", label: "Beige / piedra" },
+  { id: "blue", label: "Azul marino (marca)" },
+];
 
 type TemplateId =
   | "split-right"
@@ -38,6 +46,12 @@ const defaults = {
   pricePerM2: "7,50 EUR/m2",
   specialOfferText: "Special offer",
 };
+
+/** Paleta alineada con practika-web (sin tonos crema). */
+const badgeOffer =
+  "inline-flex items-center rounded-sm bg-[#E5ECFA] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#1a1f3d]";
+const badgeOfferMd =
+  "inline-flex items-center rounded-sm bg-[#E5ECFA] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#1a1f3d]";
 
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -91,6 +105,7 @@ function OfferPreview({
   template,
   heroSrc,
   tileSrc,
+  logoSrc,
   series,
   color,
   format,
@@ -102,6 +117,7 @@ function OfferPreview({
   template: TemplateId;
   heroSrc: string;
   tileSrc: string;
+  logoSrc: string;
   series: string;
   color: string;
   format: string;
@@ -116,22 +132,25 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-[#f6f4ef]"
+        className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-sm"
       >
         <img src={heroSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute left-4 top-4">
-          <img src="/brand/logo-white.png" alt="" className="w-28" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1a1f3d]/55 via-transparent to-[#0f172a]/90" />
+        <div className="absolute left-5 top-5">
+          <img src={logoSrc} alt="" className="w-[7.5rem] drop-shadow-lg" />
         </div>
-        <div className="absolute right-4 top-4 rounded bg-[#f3efe6] px-3 py-1 text-xs font-semibold uppercase text-[#5f4a35]">
-          {specialOfferText}
-        </div>
-        <div className="absolute right-4 top-14 h-44 w-24 overflow-hidden border-2 border-white">
+        <span className={`absolute right-5 top-5 ${badgeOfferMd}`}>{specialOfferText}</span>
+        <div className="absolute right-5 top-[4.25rem] h-40 w-[5.75rem] overflow-hidden rounded-sm shadow-xl ring-2 ring-white/90">
           <img src={tileSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="absolute bottom-4 left-4 rounded bg-black/65 px-4 py-3 text-white">
-          <p className="text-lg font-semibold uppercase">{title}</p>
-          <p className="text-sm">{pricePerM2}</p>
-          <p className="text-xs opacity-85">{material}</p>
+        <div className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-[#1a1f3d]/88 px-6 py-4 backdrop-blur-[2px]">
+          <div className="flex flex-wrap items-end justify-between gap-3 text-white">
+            <div>
+              <p className="text-lg font-semibold uppercase tracking-wide">{title}</p>
+              <p className="mt-1 text-xs text-white/75">{material}</p>
+            </div>
+            <p className="text-2xl font-semibold tabular-nums text-[#fbbf24]">{pricePerM2}</p>
+          </div>
         </div>
       </div>
     );
@@ -141,26 +160,24 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="grid aspect-[16/9] w-full grid-cols-[1.2fr_1fr] gap-3 rounded border border-neutral-200 bg-[#f6f4ef] p-3"
+        className="grid aspect-[16/9] w-full grid-cols-[1.15fr_1fr] gap-4 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm"
       >
-        <div className="overflow-hidden border-2 border-[#c6c1b1] bg-white">
+        <div className="relative min-h-0 overflow-hidden rounded-md shadow-md ring-1 ring-slate-200/90">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="flex flex-col border border-neutral-200 bg-white p-4">
-          <img src="/brand/logo-anthracite.png" alt="" className="w-28" />
-          <div className="mt-3 rounded bg-[#f3efe6] px-3 py-1 text-xs font-semibold uppercase text-[#5f4a35]">
-            {specialOfferText}
+        <div className="flex min-h-0 flex-col rounded-md bg-white p-5 shadow-md ring-1 ring-slate-100">
+          <img src={logoSrc} alt="" className="h-auto w-28" />
+          <span className={`mt-4 w-fit ${badgeOfferMd}`}>{specialOfferText}</span>
+          <div className="mt-5 border-l-[3px] border-[#1a1f3d] pl-4">
+            <p className="text-[15px] font-semibold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-600">{material}</p>
           </div>
-          <div className="mt-3 border-l-4 border-[#7c5a3a] pl-3">
-            <p className="text-base font-semibold uppercase text-neutral-900">{title}</p>
-            <p className="text-xs text-neutral-700">{material}</p>
-          </div>
-          <div className="mt-3 h-28 w-20 overflow-hidden border border-neutral-200">
+          <div className="mt-4 h-28 w-[5.25rem] shrink-0 overflow-hidden rounded-sm ring-1 ring-slate-200">
             <img src={tileSrc} alt="" className="h-full w-full object-cover" />
           </div>
-          <div className="mt-auto border-t border-neutral-200 pt-3">
-            <p className="text-xs uppercase text-[#7c5a3a]">Precio especial</p>
-            <p className="text-2xl font-semibold text-neutral-900">{pricePerM2}</p>
+          <div className="mt-auto border-t border-slate-200 pt-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1a1f3d]">Precio especial</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{pricePerM2}</p>
           </div>
         </div>
       </div>
@@ -171,23 +188,24 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-black"
+        className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-[#0f1429] shadow-sm"
       >
-        <img src={heroSrc} alt="" className="h-full w-full object-cover opacity-85" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
-        <div className="absolute left-4 top-4">
-          <img src="/brand/logo-white.png" alt="" className="w-28" />
+        <img src={heroSrc} alt="" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-[#1a1f3d]/95 via-[#1a1f3d]/35 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-[#1a1f3d]/40" />
+        <div className="absolute left-5 top-5">
+          <img src={logoSrc} alt="" className="w-[7.5rem] drop-shadow-md" />
         </div>
-        <div className="absolute right-4 top-4 rounded bg-[#f3efe6] px-3 py-1 text-xs font-semibold uppercase text-[#5f4a35]">
-          {specialOfferText}
-        </div>
-        <div className="absolute bottom-4 left-4 rounded bg-black/50 px-4 py-3 text-white">
-          <p className="text-2xl font-semibold uppercase">{title}</p>
-          <p className="text-base">{pricePerM2}</p>
-          <p className="text-xs opacity-85">{material}</p>
-        </div>
-        <div className="absolute bottom-4 right-4 h-28 w-16 overflow-hidden border-2 border-white/85">
-          <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+        <span className={`absolute right-5 top-5 ${badgeOfferMd}`}>{specialOfferText}</span>
+        <div className="absolute bottom-5 left-5 right-5 flex flex-wrap items-stretch gap-4">
+          <div className="min-w-[200px] flex-1 rounded-md border border-white/15 bg-black/35 px-5 py-4 text-white backdrop-blur-md">
+            <p className="text-2xl font-semibold uppercase leading-tight tracking-wide">{title}</p>
+            <p className="mt-2 text-sm text-white/85">{pricePerM2}</p>
+            <p className="mt-1 text-xs text-white/65">{material}</p>
+          </div>
+          <div className="h-32 w-24 shrink-0 overflow-hidden rounded-md shadow-2xl ring-2 ring-white/80">
+            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+          </div>
         </div>
       </div>
     );
@@ -197,30 +215,27 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-[#f6f4ef]"
+        className="flex aspect-[16/9] w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm"
       >
-        <div className="absolute inset-x-0 top-0 h-9 bg-[#c6c1b1]" />
-        <div className="absolute left-4 top-2">
-          <img src="/brand/logo-anthracite.png" alt="" className="w-24" />
-        </div>
-        <div className="absolute right-4 top-2 rounded bg-[#f3efe6] px-3 py-1 text-[10px] font-semibold uppercase text-[#5f4a35]">
-          {specialOfferText}
-        </div>
-        <div className="absolute left-4 top-12 h-[65%] w-[74%] overflow-hidden border border-neutral-200 bg-white">
-          <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-        </div>
-        <div className="absolute right-4 top-12 h-[65%] w-[14%] overflow-hidden border border-neutral-200 bg-white">
-          <img src={tileSrc} alt="" className="h-full w-full object-cover" />
-        </div>
-        <div className="absolute inset-x-4 bottom-3 border-t border-[#ddd5c7] pt-2">
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="text-lg font-semibold uppercase text-neutral-900">{title}</p>
-              <p className="text-xs text-neutral-600">{material}</p>
-            </div>
-            <p className="text-2xl font-semibold text-neutral-900">{pricePerM2}</p>
+        <header className="flex h-12 shrink-0 items-center justify-between bg-[#1a1f3d] px-4">
+          <img src={logoSrc} alt="" className="h-8 w-auto" />
+          <span className={badgeOffer}>{specialOfferText}</span>
+        </header>
+        <div className="flex min-h-0 flex-1 gap-3 p-3">
+          <div className="min-h-0 min-w-0 flex-[1_1_72%] overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-200/80">
+            <img src={heroSrc} alt="" className="h-full w-full object-cover" />
+          </div>
+          <div className="flex w-[17%] min-w-[72px] shrink-0 flex-col overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-200/80">
+            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
           </div>
         </div>
+        <footer className="flex shrink-0 items-end justify-between gap-4 border-t border-slate-200 bg-white px-4 py-3">
+          <div>
+            <p className="text-base font-semibold uppercase tracking-wide text-slate-900">{title}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{material}</p>
+          </div>
+          <p className="text-2xl font-semibold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
+        </footer>
       </div>
     );
   }
@@ -229,23 +244,25 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-white"
+        className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,34%)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
       >
-        <div className="absolute inset-y-0 left-0 w-[64%] overflow-hidden">
+        <div className="relative min-h-0 overflow-hidden">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
         </div>
-        <div className="absolute inset-y-0 right-0 w-[36%] bg-[#c6c1b1] p-4">
-          <img src="/brand/logo-anthracite.png" alt="" className="w-24" />
-          <div className="mt-3 inline-block rounded bg-[#f3efe6] px-3 py-1 text-[10px] font-semibold uppercase text-[#5f4a35]">
+        <div className="flex min-h-0 flex-col bg-[#1a1f3d] px-5 py-5 text-white">
+          <img src={logoSrc} alt="" className="h-auto w-24" />
+          <span className="mt-4 w-fit rounded-sm border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
             {specialOfferText}
-          </div>
-          <div className="mt-3 h-36 w-20 overflow-hidden border border-neutral-200 bg-white">
+          </span>
+          <div className="mt-4 h-36 w-20 overflow-hidden rounded-sm ring-1 ring-white/25">
             <img src={tileSrc} alt="" className="h-full w-full object-cover" />
           </div>
-          <p className="mt-3 text-base font-semibold uppercase leading-tight text-neutral-900">{title}</p>
-          <p className="text-xs text-neutral-700">{material}</p>
-          <div className="mt-3 rounded bg-black px-3 py-1 text-center text-xl font-semibold text-white">
-            {pricePerM2}
+          <p className="mt-4 text-sm font-semibold uppercase leading-snug tracking-wide">{title}</p>
+          <p className="mt-1 text-xs text-white/70">{material}</p>
+          <div className="mt-auto border-t border-white/15 pt-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#fbbf24]">Precio</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{pricePerM2}</p>
           </div>
         </div>
       </div>
@@ -256,23 +273,20 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-white"
+        className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-sm"
       >
         <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-x-0 top-0 h-10 bg-black/72" />
-        <div className="absolute left-4 top-2">
-          <img src="/brand/logo-white.png" alt="" className="w-24" />
+        <div className="absolute inset-x-0 top-0 flex h-12 items-center bg-gradient-to-r from-[#1a1f3d] to-[#2a3156] px-4 shadow-md">
+          <img src={logoSrc} alt="" className="h-8 w-auto" />
+          <span className={`ml-auto ${badgeOffer}`}>{specialOfferText}</span>
         </div>
-        <div className="absolute right-4 top-2 rounded bg-[#f3efe6] px-3 py-1 text-[10px] font-semibold uppercase text-[#5f4a35]">
-          {specialOfferText}
-        </div>
-        <div className="absolute inset-x-0 bottom-0 bg-[#111]/84 px-4 py-3 text-white">
-          <div className="flex items-end justify-between">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0f172a] via-[#1a1f3d]/92 to-transparent px-5 pb-5 pt-16">
+          <div className="flex items-end justify-between gap-4 text-white">
             <div>
-              <p className="text-xl font-semibold uppercase">{title}</p>
-              <p className="text-xs opacity-90">{material}</p>
+              <p className="text-xl font-semibold uppercase tracking-wide">{title}</p>
+              <p className="mt-1 text-xs text-white/75">{material}</p>
             </div>
-            <p className="text-3xl font-semibold">{pricePerM2}</p>
+            <p className="text-3xl font-semibold tabular-nums text-[#fbbf24]">{pricePerM2}</p>
           </div>
         </div>
       </div>
@@ -283,22 +297,20 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-[#f6f4ef]"
+        className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100 p-3 shadow-sm"
       >
-        <div className="absolute left-3 top-3 h-[67%] w-[59%] overflow-hidden border-4 border-[#c6c1b1]">
+        <div className="absolute left-3 top-3 h-[68%] w-[58%] overflow-hidden rounded-md shadow-lg ring-2 ring-[#1a1f3d]/20">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="absolute left-[51%] top-[45%] z-10 h-[47%] w-[23%] overflow-hidden border-4 border-white shadow-xl">
+        <div className="absolute left-[50%] top-[44%] z-10 h-[48%] w-[24%] overflow-hidden rounded-md shadow-2xl ring-4 ring-white">
           <img src={tileSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="absolute right-3 top-3 w-[27%] rounded bg-white/95 p-3">
-          <img src="/brand/logo-anthracite.png" alt="" className="w-24" />
-          <div className="mt-2 rounded bg-[#f3efe6] px-2 py-1 text-[10px] font-semibold uppercase text-[#5f4a35]">
-            {specialOfferText}
-          </div>
-          <p className="mt-3 text-lg font-semibold uppercase text-neutral-900">{title}</p>
-          <p className="text-xs text-neutral-600">{material}</p>
-          <p className="mt-2 text-2xl font-semibold text-neutral-900">{pricePerM2}</p>
+        <div className="absolute right-3 top-3 w-[28%] rounded-md bg-white p-4 shadow-xl ring-1 ring-slate-200/90">
+          <img src={logoSrc} alt="" className="w-24" />
+          <span className={`mt-3 block w-fit ${badgeOffer}`}>{specialOfferText}</span>
+          <p className="mt-4 text-base font-semibold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
+          <p className="mt-1 text-xs text-slate-600">{material}</p>
+          <p className="mt-4 text-2xl font-semibold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
         </div>
       </div>
     );
@@ -308,18 +320,18 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-[#c6c1b1]"
+        className="grid aspect-[16/9] w-full grid-cols-[minmax(0,30%)_1fr] gap-3 overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-100 to-slate-200 p-3 shadow-sm"
       >
-        <div className="absolute left-3 top-3 w-[28%] rounded bg-white p-3">
-          <img src="/brand/logo-anthracite.png" alt="" className="w-24" />
-          <div className="mt-2 rounded bg-[#f3efe6] px-2 py-1 text-[10px] font-semibold uppercase text-[#5f4a35]">
-            {specialOfferText}
+        <div className="flex min-h-0 flex-col rounded-md bg-white p-4 shadow-lg ring-1 ring-slate-200/80">
+          <img src={logoSrc} alt="" className="w-24" />
+          <span className={`mt-3 w-fit ${badgeOffer}`}>{specialOfferText}</span>
+          <p className="mt-5 text-base font-semibold uppercase leading-snug text-slate-900">{title}</p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-600">{material}</p>
+          <div className="mt-auto border-t border-slate-200 pt-4">
+            <p className="rounded-md bg-[#1a1f3d] py-2.5 text-center text-xl font-semibold tabular-nums text-white">{pricePerM2}</p>
           </div>
-          <p className="mt-3 text-lg font-semibold uppercase leading-tight text-neutral-900">{title}</p>
-          <p className="text-xs text-neutral-600">{material}</p>
-          <div className="mt-3 rounded bg-black px-2 py-1 text-center text-xl font-semibold text-white">{pricePerM2}</div>
         </div>
-        <div className="absolute left-[32%] top-3 h-[89%] w-[66%] overflow-hidden border-4 border-[#f0ece2]">
+        <div className="min-h-0 overflow-hidden rounded-md shadow-inner ring-2 ring-white">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
         </div>
       </div>
@@ -330,26 +342,24 @@ function OfferPreview({
     return (
       <div
         ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-white"
+        className="grid aspect-[16/9] w-full grid-cols-[36%_1fr] grid-rows-[1fr_auto] gap-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm"
       >
-        <div className="absolute left-3 top-3 h-[89%] w-[36%] overflow-hidden border border-neutral-200 bg-[#f6f4ef]">
+        <div className="row-span-2 min-h-0 overflow-hidden rounded-md bg-[#E5ECFA]/60 ring-1 ring-slate-200/90">
           <img src={tileSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="absolute left-[40%] top-3 h-[53%] w-[58%] overflow-hidden border border-neutral-200">
+        <div className="min-h-0 overflow-hidden rounded-md ring-1 ring-slate-200 shadow-sm">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="absolute left-[40%] top-[58%] w-[58%] rounded bg-[#f6f4ef] p-3">
-          <img src="/brand/logo-anthracite.png" alt="" className="w-24" />
-          <div className="mt-2 flex items-start justify-between gap-2">
+        <div className="col-start-2 rounded-md border-t-[3px] border-[#1a1f3d] bg-white p-4 shadow-sm ring-1 ring-slate-100">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-lg font-semibold uppercase leading-tight text-neutral-900">{title}</p>
-              <p className="text-xs text-neutral-600">{material}</p>
+              <img src={logoSrc} alt="" className="mb-2 w-24" />
+              <p className="text-base font-semibold uppercase leading-snug text-slate-900">{title}</p>
+              <p className="mt-1 text-xs text-slate-600">{material}</p>
             </div>
-            <div className="rounded bg-[#f3efe6] px-2 py-1 text-[10px] font-semibold uppercase text-[#5f4a35]">
-              {specialOfferText}
-            </div>
+            <span className={badgeOffer}>{specialOfferText}</span>
           </div>
-          <p className="mt-2 text-2xl font-semibold text-neutral-900">{pricePerM2}</p>
+          <p className="mt-3 text-2xl font-semibold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
         </div>
       </div>
     );
@@ -358,26 +368,24 @@ function OfferPreview({
   return (
     <div
       ref={previewRef}
-      className="relative aspect-[16/9] w-full overflow-hidden rounded border border-neutral-200 bg-[#c6c1b1]"
+      className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,23%)] gap-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm"
     >
-      <div className="absolute left-3 top-3 h-[88%] w-[75%] overflow-hidden border-4 border-[#f2eee6] bg-[#ded8cb]">
+      <div className="relative min-h-0 overflow-hidden rounded-md shadow-md ring-1 ring-slate-200/90">
         <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-      </div>
-      <div className="absolute right-3 top-3 h-[88%] w-[21%] rounded bg-white/92 p-2">
-        <div className="rounded bg-[#f3efe6] px-2 py-1 text-[10px] font-semibold uppercase text-[#5f4a35]">
-          {specialOfferText}
-        </div>
-        <div className="mt-2 h-[58%] overflow-hidden border border-neutral-200">
-          <img src={tileSrc} alt="" className="h-full w-full object-cover" />
-        </div>
-        <div className="mt-2 text-[11px] leading-tight text-neutral-800">
-          <p className="font-semibold uppercase">{title}</p>
-          <p>{pricePerM2}</p>
-          <p className="opacity-80">{material}</p>
+        <div className="absolute left-4 top-4">
+          <img src={logoSrc} alt="" className="w-28 drop-shadow-md" />
         </div>
       </div>
-      <div className="absolute left-5 top-5">
-        <img src="/brand/logo-white.png" alt="" className="w-24" />
+      <div className="flex min-h-0 flex-col rounded-md bg-white p-3 shadow-md ring-1 ring-slate-100">
+        <span className={badgeOffer}>{specialOfferText}</span>
+        <div className="mt-3 min-h-0 flex-1 overflow-hidden rounded-sm ring-1 ring-slate-200">
+          <img src={tileSrc} alt="" className="h-full min-h-[100px] w-full object-cover" />
+        </div>
+        <div className="mt-3 border-t border-slate-200 pt-2 text-[11px] leading-snug text-slate-800">
+          <p className="font-semibold uppercase tracking-wide">{title}</p>
+          <p className="mt-1 font-semibold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
+          <p className="mt-0.5 text-slate-600">{material}</p>
+        </div>
       </div>
     </div>
   );
@@ -386,6 +394,7 @@ function OfferPreview({
 export function OffersBuilder() {
   const [heroSrc, setHeroSrc] = useState("/catalog/placeholder-hero.svg");
   const [tileSrc, setTileSrc] = useState("/catalog/placeholder-tile.svg");
+  const [logoVariant, setLogoVariant] = useState<LogoVariant>("white");
   const [series, setSeries] = useState(defaults.series);
   const [color, setColor] = useState(defaults.color);
   const [format, setFormat] = useState(defaults.format);
@@ -482,6 +491,20 @@ export function OffersBuilder() {
           value={specialOfferText}
           onChange={(e) => setSpecialOfferText(e.target.value)}
         />
+        <label className="flex flex-col gap-1 md:col-span-2">
+          <span className="text-xs font-medium text-neutral-600">Logo (contraste con el fondo)</span>
+          <select
+            className="rounded border border-neutral-300 bg-white px-3 py-2 text-sm"
+            value={logoVariant}
+            onChange={(e) => setLogoVariant(e.target.value as LogoVariant)}
+          >
+            {logoVariantOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="space-y-6">
@@ -513,6 +536,7 @@ export function OffersBuilder() {
               previewRef={refs[tpl.id]}
               heroSrc={heroSrc}
               tileSrc={tileSrc}
+              logoSrc={logoSrcForVariant(logoVariant)}
               series={series}
               color={color}
               format={format}
