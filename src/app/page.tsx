@@ -17,6 +17,17 @@ export default function Home() {
       </div>
       <ul className="flex flex-col gap-3 text-sm">
         <li className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          Catálogo general
+        </li>
+        <li>
+          <Link
+            className="font-medium text-amber-900 underline-offset-4 hover:underline"
+            href="/catalogo"
+          >
+            Generador de catálogos (páginas, bloques, PDF / JSON)
+          </Link>
+        </li>
+        <li className="pt-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
           Novedades
         </li>
         <li>

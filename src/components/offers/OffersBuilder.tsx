@@ -47,11 +47,10 @@ const defaults = {
   specialOfferText: "Special offer",
 };
 
-/** Paleta alineada con practika-web (sin tonos crema). */
-const badgeOffer =
-  "inline-flex items-center rounded-sm bg-[#E5ECFA] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#1a1f3d]";
-const badgeOfferMd =
-  "inline-flex items-center rounded-sm bg-[#E5ECFA] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#1a1f3d]";
+const badge =
+  "inline-flex items-center rounded-[3px] border border-[#1a1f3d]/15 bg-[#E5ECFA] px-2.5 py-[5px] text-[9px] font-bold uppercase tracking-[0.18em] text-[#1a1f3d]";
+const badgeLight =
+  "inline-flex items-center rounded-[3px] border border-white/20 bg-white/12 px-2.5 py-[5px] text-[9px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm";
 
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -101,11 +100,18 @@ function DropZone({
   );
 }
 
+function logoBgClass(variant: LogoVariant) {
+  return variant === "white" || variant === "beige"
+    ? "bg-[#1a1f3d]/90"
+    : "bg-white/95";
+}
+
 function OfferPreview({
   template,
   heroSrc,
   tileSrc,
   logoSrc,
+  logoVariant,
   series,
   color,
   format,
@@ -118,6 +124,7 @@ function OfferPreview({
   heroSrc: string;
   tileSrc: string;
   logoSrc: string;
+  logoVariant: LogoVariant;
   series: string;
   color: string;
   format: string;
@@ -127,83 +134,99 @@ function OfferPreview({
   previewRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const title = `${format} ${series}${color ? ` ${color}` : ""}`;
+  const logoBg = logoBgClass(logoVariant);
 
+  /* ── split-right ── */
+  if (template === "split-right") {
+    return (
+      <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,30%)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="relative min-h-0 overflow-hidden">
+          <img src={heroSrc} alt="" className="h-full w-full object-cover" />
+          <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+        </div>
+        <div className="flex min-h-0 flex-col border-l border-slate-200 px-5 py-5">
+          <span className={`w-fit ${badge}`}>{specialOfferText}</span>
+          <div className="mt-4 flex-1 overflow-hidden rounded ring-1 ring-slate-200">
+            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+          </div>
+          <div className="mt-3">
+            <p className="text-sm font-bold uppercase tracking-wide text-slate-900">{title}</p>
+            <p className="mt-1 text-[11px] text-slate-500">{material}</p>
+          </div>
+          <p className="mt-2 text-xl font-bold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── price-overlay ── */
   if (template === "price-overlay") {
     return (
-      <div
-        ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-sm"
-      >
+      <div ref={previewRef} className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-sm">
         <img src={heroSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1a1f3d]/55 via-transparent to-[#0f172a]/90" />
-        <div className="absolute left-5 top-5">
-          <img src={logoSrc} alt="" className="w-[7.5rem] drop-shadow-lg" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/80" />
+        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+        <div className="absolute right-5 top-5 flex items-start gap-3">
+          <span className={badgeLight}>{specialOfferText}</span>
         </div>
-        <span className={`absolute right-5 top-5 ${badgeOfferMd}`}>{specialOfferText}</span>
-        <div className="absolute right-5 top-[4.25rem] h-40 w-[5.75rem] overflow-hidden rounded-sm shadow-xl ring-2 ring-white/90">
+        <div className="absolute right-5 top-14 h-28 w-24 overflow-hidden rounded shadow-xl ring-2 ring-white/80">
           <img src={tileSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-[#1a1f3d]/88 px-6 py-4 backdrop-blur-[2px]">
-          <div className="flex flex-wrap items-end justify-between gap-3 text-white">
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-5 pt-12">
+          <div className="flex items-end justify-between gap-4 text-white">
             <div>
-              <p className="text-lg font-semibold uppercase tracking-wide">{title}</p>
-              <p className="mt-1 text-xs text-white/75">{material}</p>
+              <p className="text-lg font-bold uppercase tracking-wide drop-shadow">{title}</p>
+              <p className="mt-1 text-xs text-white/70">{material}</p>
             </div>
-            <p className="text-2xl font-semibold tabular-nums text-[#fbbf24]">{pricePerM2}</p>
+            <p className="text-3xl font-bold tabular-nums text-[#fbbf24] drop-shadow">{pricePerM2}</p>
           </div>
         </div>
       </div>
     );
   }
 
+  /* ── clean-card ── */
   if (template === "clean-card") {
     return (
-      <div
-        ref={previewRef}
-        className="grid aspect-[16/9] w-full grid-cols-[1.15fr_1fr] gap-4 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm"
-      >
-        <div className="relative min-h-0 overflow-hidden rounded-md shadow-md ring-1 ring-slate-200/90">
+      <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[1.15fr_1fr] overflow-hidden rounded-lg border border-slate-200 bg-[#f7f8fa] shadow-sm">
+        <div className="relative min-h-0 overflow-hidden">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="flex min-h-0 flex-col rounded-md bg-white p-5 shadow-md ring-1 ring-slate-100">
-          <img src={logoSrc} alt="" className="h-auto w-28" />
-          <span className={`mt-4 w-fit ${badgeOfferMd}`}>{specialOfferText}</span>
-          <div className="mt-5 border-l-[3px] border-[#1a1f3d] pl-4">
-            <p className="text-[15px] font-semibold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-slate-600">{material}</p>
+        <div className="flex min-h-0 flex-col px-6 py-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className={`flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+            <span className={`shrink-0 ${badge}`}>{specialOfferText}</span>
           </div>
-          <div className="mt-4 h-28 w-[5.25rem] shrink-0 overflow-hidden rounded-sm ring-1 ring-slate-200">
-            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+          <div className="mt-4 border-l-[3px] border-[#1a1f3d] pl-4">
+            <p className="text-base font-bold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
+            <p className="mt-1.5 text-xs text-slate-500">{material}</p>
           </div>
-          <div className="mt-auto border-t border-slate-200 pt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1a1f3d]">Precio especial</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{pricePerM2}</p>
+          <div className="mt-4 flex flex-1 items-center gap-5">
+            <div className="h-full max-h-[8rem] w-[6.5rem] shrink-0 overflow-hidden rounded ring-1 ring-slate-200">
+              <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+            </div>
+            <p className="text-2xl font-bold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
           </div>
         </div>
       </div>
     );
   }
 
+  /* ── hero-focus ── */
   if (template === "hero-focus") {
     return (
-      <div
-        ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-[#0f1429] shadow-sm"
-      >
+      <div ref={previewRef} className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-[#0f1429] shadow-sm">
         <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#1a1f3d]/95 via-[#1a1f3d]/35 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-[#1a1f3d]/40" />
-        <div className="absolute left-5 top-5">
-          <img src={logoSrc} alt="" className="w-[7.5rem] drop-shadow-md" />
-        </div>
-        <span className={`absolute right-5 top-5 ${badgeOfferMd}`}>{specialOfferText}</span>
-        <div className="absolute bottom-5 left-5 right-5 flex flex-wrap items-stretch gap-4">
-          <div className="min-w-[200px] flex-1 rounded-md border border-white/15 bg-black/35 px-5 py-4 text-white backdrop-blur-md">
-            <p className="text-2xl font-semibold uppercase leading-tight tracking-wide">{title}</p>
-            <p className="mt-2 text-sm text-white/85">{pricePerM2}</p>
-            <p className="mt-1 text-xs text-white/65">{material}</p>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/90 via-transparent to-[#1a1f3d]/25" />
+        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+        <span className={`absolute right-5 top-5 ${badgeLight}`}>{specialOfferText}</span>
+        <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
+          <div className="text-white">
+            <p className="text-xl font-bold uppercase tracking-wide drop-shadow">{title}</p>
+            <p className="mt-1 text-xs text-white/70">{material}</p>
+            <p className="mt-2 text-2xl font-bold tabular-nums text-[#fbbf24] drop-shadow">{pricePerM2}</p>
           </div>
-          <div className="h-32 w-24 shrink-0 overflow-hidden rounded-md shadow-2xl ring-2 ring-white/80">
+          <div className="h-28 w-24 shrink-0 overflow-hidden rounded shadow-2xl ring-2 ring-white/80">
             <img src={tileSrc} alt="" className="h-full w-full object-cover" />
           </div>
         </div>
@@ -211,184 +234,148 @@ function OfferPreview({
     );
   }
 
+  /* ── catalog-strip ── */
   if (template === "catalog-strip") {
     return (
-      <div
-        ref={previewRef}
-        className="flex aspect-[16/9] w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm"
-      >
-        <header className="flex h-12 shrink-0 items-center justify-between bg-[#1a1f3d] px-4">
-          <img src={logoSrc} alt="" className="h-8 w-auto" />
-          <span className={badgeOffer}>{specialOfferText}</span>
-        </header>
-        <div className="flex min-h-0 flex-1 gap-3 p-3">
-          <div className="min-h-0 min-w-0 flex-[1_1_72%] overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-200/80">
+      <div ref={previewRef} className="flex aspect-[16/9] w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="relative flex min-h-0 flex-1">
+          <div className="min-h-0 min-w-0 flex-[1_1_78%] overflow-hidden">
             <img src={heroSrc} alt="" className="h-full w-full object-cover" />
           </div>
-          <div className="flex w-[17%] min-w-[72px] shrink-0 flex-col overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-200/80">
+          <div className="flex w-[22%] min-w-[90px] shrink-0 flex-col overflow-hidden border-l border-slate-100">
             <img src={tileSrc} alt="" className="h-full w-full object-cover" />
           </div>
+          <div className={`absolute left-5 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         </div>
-        <footer className="flex shrink-0 items-end justify-between gap-4 border-t border-slate-200 bg-white px-4 py-3">
-          <div>
-            <p className="text-base font-semibold uppercase tracking-wide text-slate-900">{title}</p>
-            <p className="mt-0.5 text-xs text-slate-500">{material}</p>
+        <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-slate-200 px-5 py-3">
+          <div className="flex items-center gap-3">
+            <span className={badge}>{specialOfferText}</span>
+            <div>
+              <p className="text-sm font-bold uppercase tracking-wide text-slate-900">{title}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">{material}</p>
+            </div>
           </div>
-          <p className="text-2xl font-semibold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
+          <p className="text-xl font-bold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
         </footer>
       </div>
     );
   }
 
+  /* ── minimal-price ── */
   if (template === "minimal-price") {
     return (
-      <div
-        ref={previewRef}
-        className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,34%)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
-      >
+      <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,32%)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="relative min-h-0 overflow-hidden">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
+          <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         </div>
         <div className="flex min-h-0 flex-col bg-[#1a1f3d] px-5 py-5 text-white">
-          <img src={logoSrc} alt="" className="h-auto w-24" />
-          <span className="mt-4 w-fit rounded-sm border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
-            {specialOfferText}
-          </span>
-          <div className="mt-4 h-36 w-20 overflow-hidden rounded-sm ring-1 ring-white/25">
+          <span className={`w-fit ${badgeLight}`}>{specialOfferText}</span>
+          <div className="mt-4 flex-1 overflow-hidden rounded ring-1 ring-white/20">
             <img src={tileSrc} alt="" className="h-full w-full object-cover" />
           </div>
-          <p className="mt-4 text-sm font-semibold uppercase leading-snug tracking-wide">{title}</p>
-          <p className="mt-1 text-xs text-white/70">{material}</p>
-          <div className="mt-auto border-t border-white/15 pt-4">
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#fbbf24]">Precio</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{pricePerM2}</p>
+          <div className="mt-3">
+            <p className="text-sm font-bold uppercase leading-snug tracking-wide">{title}</p>
+            <p className="mt-1 text-[11px] text-white/60">{material}</p>
           </div>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-white">{pricePerM2}</p>
         </div>
       </div>
     );
   }
 
+  /* ── price-banner ── */
   if (template === "price-banner") {
     return (
-      <div
-        ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-sm"
-      >
+      <div ref={previewRef} className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-sm">
         <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-x-0 top-0 flex h-12 items-center bg-gradient-to-r from-[#1a1f3d] to-[#2a3156] px-4 shadow-md">
-          <img src={logoSrc} alt="" className="h-8 w-auto" />
-          <span className={`ml-auto ${badgeOffer}`}>{specialOfferText}</span>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/25" />
+        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+        <span className={`absolute right-5 top-5 ${badgeLight}`}>{specialOfferText}</span>
+        <div className="absolute bottom-5 right-5 h-28 w-24 overflow-hidden rounded shadow-2xl ring-2 ring-white/80">
+          <img src={tileSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0f172a] via-[#1a1f3d]/92 to-transparent px-5 pb-5 pt-16">
-          <div className="flex items-end justify-between gap-4 text-white">
-            <div>
-              <p className="text-xl font-semibold uppercase tracking-wide">{title}</p>
-              <p className="mt-1 text-xs text-white/75">{material}</p>
-            </div>
-            <p className="text-3xl font-semibold tabular-nums text-[#fbbf24]">{pricePerM2}</p>
-          </div>
+        <div className="absolute bottom-5 left-5 right-36 text-white">
+          <p className="text-lg font-bold uppercase tracking-wide drop-shadow">{title}</p>
+          <p className="mt-0.5 text-xs text-white/70">{material}</p>
+          <p className="mt-2 text-3xl font-bold tabular-nums text-[#fbbf24] drop-shadow">{pricePerM2}</p>
         </div>
       </div>
     );
   }
 
+  /* ── duo-frame ── */
   if (template === "duo-frame") {
     return (
-      <div
-        ref={previewRef}
-        className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100 p-3 shadow-sm"
-      >
-        <div className="absolute left-3 top-3 h-[68%] w-[58%] overflow-hidden rounded-md shadow-lg ring-2 ring-[#1a1f3d]/20">
+      <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,34%)] gap-3 overflow-hidden rounded-lg border border-slate-200 bg-[#f5f6f8] p-3 shadow-sm">
+        <div className="relative min-h-0 overflow-hidden rounded-md shadow ring-1 ring-slate-200/80">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
+          <div className={`absolute left-4 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         </div>
-        <div className="absolute left-[50%] top-[44%] z-10 h-[48%] w-[24%] overflow-hidden rounded-md shadow-2xl ring-4 ring-white">
-          <img src={tileSrc} alt="" className="h-full w-full object-cover" />
-        </div>
-        <div className="absolute right-3 top-3 w-[28%] rounded-md bg-white p-4 shadow-xl ring-1 ring-slate-200/90">
-          <img src={logoSrc} alt="" className="w-24" />
-          <span className={`mt-3 block w-fit ${badgeOffer}`}>{specialOfferText}</span>
-          <p className="mt-4 text-base font-semibold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
-          <p className="mt-1 text-xs text-slate-600">{material}</p>
-          <p className="mt-4 text-2xl font-semibold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
+        <div className="flex min-h-0 flex-col rounded-md bg-white p-4 shadow ring-1 ring-slate-100">
+          <span className={`w-fit ${badge}`}>{specialOfferText}</span>
+          <div className="mt-3 flex-1 overflow-hidden rounded ring-1 ring-slate-200">
+            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+          </div>
+          <div className="mt-3">
+            <p className="text-sm font-bold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
+            <p className="mt-1 text-[11px] text-slate-500">{material}</p>
+          </div>
+          <p className="mt-2 text-xl font-bold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
         </div>
       </div>
     );
   }
 
+  /* ── editorial-left ── */
   if (template === "editorial-left") {
     return (
-      <div
-        ref={previewRef}
-        className="grid aspect-[16/9] w-full grid-cols-[minmax(0,30%)_1fr] gap-3 overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-100 to-slate-200 p-3 shadow-sm"
-      >
-        <div className="flex min-h-0 flex-col rounded-md bg-white p-4 shadow-lg ring-1 ring-slate-200/80">
-          <img src={logoSrc} alt="" className="w-24" />
-          <span className={`mt-3 w-fit ${badgeOffer}`}>{specialOfferText}</span>
-          <p className="mt-5 text-base font-semibold uppercase leading-snug text-slate-900">{title}</p>
-          <p className="mt-2 text-xs leading-relaxed text-slate-600">{material}</p>
-          <div className="mt-auto border-t border-slate-200 pt-4">
-            <p className="rounded-md bg-[#1a1f3d] py-2.5 text-center text-xl font-semibold tabular-nums text-white">{pricePerM2}</p>
+      <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[minmax(0,34%)_1fr] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="flex min-h-0 flex-col border-r border-slate-200 px-5 py-5">
+          <div className={`flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+          <span className={`mt-3 w-fit ${badge}`}>{specialOfferText}</span>
+          <div className="mt-4 flex-1 overflow-hidden rounded ring-1 ring-slate-200">
+            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
           </div>
+          <div className="mt-3">
+            <p className="text-sm font-bold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
+            <p className="mt-1 text-[11px] text-slate-500">{material}</p>
+          </div>
+          <p className="mt-2 text-xl font-bold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
         </div>
-        <div className="min-h-0 overflow-hidden rounded-md shadow-inner ring-2 ring-white">
+        <div className="min-h-0 overflow-hidden">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
         </div>
       </div>
     );
   }
 
+  /* ── tile-dominant ── */
   if (template === "tile-dominant") {
     return (
-      <div
-        ref={previewRef}
-        className="grid aspect-[16/9] w-full grid-cols-[36%_1fr] grid-rows-[1fr_auto] gap-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm"
-      >
-        <div className="row-span-2 min-h-0 overflow-hidden rounded-md bg-[#E5ECFA]/60 ring-1 ring-slate-200/90">
+      <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[36%_1fr] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="min-h-0 overflow-hidden bg-[#f5f6f8]">
           <img src={tileSrc} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="min-h-0 overflow-hidden rounded-md ring-1 ring-slate-200 shadow-sm">
-          <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-        </div>
-        <div className="col-start-2 rounded-md border-t-[3px] border-[#1a1f3d] bg-white p-4 shadow-sm ring-1 ring-slate-100">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <img src={logoSrc} alt="" className="mb-2 w-24" />
-              <p className="text-base font-semibold uppercase leading-snug text-slate-900">{title}</p>
-              <p className="mt-1 text-xs text-slate-600">{material}</p>
-            </div>
-            <span className={badgeOffer}>{specialOfferText}</span>
+        <div className="relative flex min-h-0 flex-col">
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <img src={heroSrc} alt="" className="h-full w-full object-cover" />
           </div>
-          <p className="mt-3 text-2xl font-semibold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
+          <div className={`absolute left-4 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+          <div className="flex items-center justify-between gap-4 border-t border-slate-200 px-5 py-3">
+            <div>
+              <span className={`${badge} mb-1`}>{specialOfferText}</span>
+              <p className="text-sm font-bold uppercase tracking-wide text-slate-900">{title}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">{material}</p>
+            </div>
+            <p className="text-xl font-bold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div
-      ref={previewRef}
-      className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,23%)] gap-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm"
-    >
-      <div className="relative min-h-0 overflow-hidden rounded-md shadow-md ring-1 ring-slate-200/90">
-        <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-        <div className="absolute left-4 top-4">
-          <img src={logoSrc} alt="" className="w-28 drop-shadow-md" />
-        </div>
-      </div>
-      <div className="flex min-h-0 flex-col rounded-md bg-white p-3 shadow-md ring-1 ring-slate-100">
-        <span className={badgeOffer}>{specialOfferText}</span>
-        <div className="mt-3 min-h-0 flex-1 overflow-hidden rounded-sm ring-1 ring-slate-200">
-          <img src={tileSrc} alt="" className="h-full min-h-[100px] w-full object-cover" />
-        </div>
-        <div className="mt-3 border-t border-slate-200 pt-2 text-[11px] leading-snug text-slate-800">
-          <p className="font-semibold uppercase tracking-wide">{title}</p>
-          <p className="mt-1 font-semibold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
-          <p className="mt-0.5 text-slate-600">{material}</p>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 export function OffersBuilder() {
@@ -537,6 +524,7 @@ export function OffersBuilder() {
               heroSrc={heroSrc}
               tileSrc={tileSrc}
               logoSrc={logoSrcForVariant(logoVariant)}
+              logoVariant={logoVariant}
               series={series}
               color={color}
               format={format}
