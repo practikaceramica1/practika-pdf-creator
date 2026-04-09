@@ -102,8 +102,8 @@ function DropZone({
 
 function logoBgClass(variant: LogoVariant) {
   return variant === "white" || variant === "beige"
-    ? "bg-[#1a1f3d]/90"
-    : "bg-white/95";
+    ? ""
+    : "";
 }
 
 function OfferPreview({
@@ -142,7 +142,7 @@ function OfferPreview({
       <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,30%)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="relative min-h-0 overflow-hidden">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-          <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+          <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         </div>
         <div className="flex min-h-0 flex-col border-l border-slate-200 px-5 py-5">
           <span className={`w-fit ${badge}`}>{specialOfferText}</span>
@@ -165,7 +165,7 @@ function OfferPreview({
       <div ref={previewRef} className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-sm">
         <img src={heroSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/80" />
-        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         <div className="absolute right-5 top-5 flex items-start gap-3">
           <span className={badgeLight}>{specialOfferText}</span>
         </div>
@@ -194,7 +194,7 @@ function OfferPreview({
         </div>
         <div className="flex min-h-0 flex-col px-6 py-5">
           <div className="flex items-start justify-between gap-3">
-            <div className={`flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+            <div className={`flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
             <span className={`shrink-0 ${badge}`}>{specialOfferText}</span>
           </div>
           <div className="mt-4 border-l-[3px] border-[#1a1f3d] pl-4">
@@ -218,7 +218,7 @@ function OfferPreview({
       <div ref={previewRef} className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-[#0f1429] shadow-sm">
         <img src={heroSrc} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/90 via-transparent to-[#1a1f3d]/25" />
-        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         <span className={`absolute right-5 top-5 ${badgeLight}`}>{specialOfferText}</span>
         <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
           <div className="text-white">
@@ -245,7 +245,7 @@ function OfferPreview({
           <div className="flex w-[22%] min-w-[90px] shrink-0 flex-col overflow-hidden border-l border-slate-100">
             <img src={tileSrc} alt="" className="h-full w-full object-cover" />
           </div>
-          <div className={`absolute left-5 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+          <div className={`absolute left-5 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         </div>
         <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-slate-200 px-5 py-3">
           <div className="flex items-center gap-3">
@@ -267,7 +267,7 @@ function OfferPreview({
       <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,32%)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="relative min-h-0 overflow-hidden">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-          <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+          <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         </div>
         <div className="flex min-h-0 flex-col bg-[#1a1f3d] px-5 py-5 text-white">
           <span className={`w-fit ${badgeLight}`}>{specialOfferText}</span>
@@ -290,7 +290,7 @@ function OfferPreview({
       <div ref={previewRef} className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-sm">
         <img src={heroSrc} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/25" />
-        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+        <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         <span className={`absolute right-5 top-5 ${badgeLight}`}>{specialOfferText}</span>
         <div className="absolute bottom-5 right-5 h-28 w-24 overflow-hidden rounded shadow-2xl ring-2 ring-white/80">
           <img src={tileSrc} alt="" className="h-full w-full object-cover" />
@@ -310,7 +310,7 @@ function OfferPreview({
       <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[1fr_minmax(0,34%)] gap-3 overflow-hidden rounded-lg border border-slate-200 bg-[#f5f6f8] p-3 shadow-sm">
         <div className="relative min-h-0 overflow-hidden rounded-md shadow ring-1 ring-slate-200/80">
           <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-          <div className={`absolute left-4 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+          <div className={`absolute left-4 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         </div>
         <div className="flex min-h-0 flex-col rounded-md bg-white p-4 shadow ring-1 ring-slate-100">
           <span className={`w-fit ${badge}`}>{specialOfferText}</span>
@@ -332,7 +332,7 @@ function OfferPreview({
     return (
       <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[minmax(0,34%)_1fr] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex min-h-0 flex-col border-r border-slate-200 px-5 py-5">
-          <div className={`flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+          <div className={`flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
           <span className={`mt-3 w-fit ${badge}`}>{specialOfferText}</span>
           <div className="mt-4 flex-1 overflow-hidden rounded ring-1 ring-slate-200">
             <img src={tileSrc} alt="" className="h-full w-full object-cover" />
@@ -361,7 +361,7 @@ function OfferPreview({
           <div className="min-h-0 flex-1 overflow-hidden">
             <img src={heroSrc} alt="" className="h-full w-full object-cover" />
           </div>
-          <div className={`absolute left-4 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3 shadow-md backdrop-blur-sm`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
+          <div className={`absolute left-4 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
           <div className="flex items-center justify-between gap-4 border-t border-slate-200 px-5 py-3">
             <div>
               <span className={`${badge} mb-1`}>{specialOfferText}</span>
