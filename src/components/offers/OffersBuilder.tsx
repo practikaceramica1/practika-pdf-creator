@@ -4,7 +4,24 @@
 import { jsPDF } from "jspdf";
 import { toPng } from "html-to-image";
 import { useMemo, useRef, useState } from "react";
-import { logoSrcForVariant, type LogoVariant } from "@/lib/offers-types";
+import { TileImage } from "@/components/offers/TileImage";
+import { LivePreviewSelect } from "@/components/offers/LivePreviewSelect";
+import {
+  logoSrcForVariant,
+  type LogoVariant,
+  type TileImageObjectFit,
+  type TileImageObjectPosition,
+  type TileImageRotation,
+} from "@/lib/offers-types";
+import {
+  DEFAULT_TILE_IMAGE_DISPLAY,
+  TILE_OBJECT_FIT_OPTIONS,
+  TILE_OBJECT_POSITION_OPTIONS,
+  TILE_ROTATION_OPTIONS,
+  type TemplateTileCustomization,
+  type TileImageDisplay,
+  resolveBuilderTileDisplay,
+} from "@/lib/tileImageDisplay";
 
 const logoVariantOptions: { id: LogoVariant; label: string }[] = [
   { id: "white", label: "Blanco (fondos oscuros)" },
@@ -63,40 +80,109 @@ function fileToDataUrl(file: File) {
 
 function DropZone({
   label,
+  previewSrc,
   onFile,
 }: {
   label: string;
+  previewSrc?: string;
   onFile: (file: File) => void;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <button
-      type="button"
-      className="w-full rounded border border-dashed border-neutral-300 bg-white p-4 text-left text-sm hover:bg-neutral-50"
-      onClick={() => inputRef.current?.click()}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        e.preventDefault();
-        const file = e.dataTransfer.files?.[0];
-        if (file) onFile(file);
-      }}
-    >
-      <input
-        ref={inputRef}
-        className="hidden"
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
+    <div className="space-y-2">
+      <button
+        type="button"
+        className="w-full rounded border border-dashed border-neutral-300 bg-white p-4 text-left text-sm hover:bg-neutral-50"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const file = e.dataTransfer.files?.[0];
           if (file) onFile(file);
         }}
-      />
-      <p className="font-medium text-neutral-800">{label}</p>
-      <p className="mt-1 text-xs text-neutral-500">
-        Arrastra una imagen o haz click para seleccionar
-      </p>
-    </button>
+      >
+        <input
+          ref={inputRef}
+          className="hidden"
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onFile(file);
+          }}
+        />
+        <p className="font-medium text-neutral-800">{label}</p>
+        <p className="mt-1 text-xs text-neutral-500">
+          Arrastra una imagen o haz click para seleccionar
+        </p>
+      </button>
+      {previewSrc ? (
+        <div className="overflow-hidden rounded border border-neutral-200 bg-white p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={previewSrc} alt="" className="mx-auto max-h-28 max-w-full object-contain" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function TileDisplayControls({
+  rotationDegrees,
+  objectFit,
+  objectPosition,
+  zoomPercent,
+  onRotationChange,
+  onObjectFitChange,
+  onObjectPositionChange,
+  onZoomChange,
+  compact = false,
+}: {
+  rotationDegrees: TileImageRotation;
+  objectFit: TileImageObjectFit;
+  objectPosition: TileImageObjectPosition;
+  zoomPercent: number;
+  onRotationChange: (value: TileImageRotation) => void;
+  onObjectFitChange: (value: TileImageObjectFit) => void;
+  onObjectPositionChange: (value: TileImageObjectPosition) => void;
+  onZoomChange: (value: number) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className={`grid gap-3 ${compact ? "sm:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-2 lg:grid-cols-4"}`}>
+        <LivePreviewSelect
+          label="Orientación (giro)"
+          value={String(rotationDegrees)}
+          options={TILE_ROTATION_OPTIONS}
+          onChange={(value) => onRotationChange(Number(value) as TileImageRotation)}
+        />
+        <LivePreviewSelect
+          label="Encaje en el marco"
+          value={objectFit}
+          options={TILE_OBJECT_FIT_OPTIONS}
+          onChange={onObjectFitChange}
+        />
+        <LivePreviewSelect
+          label="Posición en el marco"
+          value={objectPosition}
+          options={TILE_OBJECT_POSITION_OPTIONS}
+          onChange={onObjectPositionChange}
+        />
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-neutral-600">Zoom (%)</span>
+          <input
+            type="number"
+            min={25}
+            max={300}
+            step={5}
+            className="rounded border border-neutral-300 bg-white px-3 py-2 text-sm"
+            value={zoomPercent}
+            onChange={(e) => onZoomChange(Number(e.target.value))}
+          />
+        </label>
+      </div>
+    </div>
   );
 }
 
@@ -118,6 +204,7 @@ function OfferPreview({
   material,
   pricePerM2,
   specialOfferText,
+  tileDisplay,
   previewRef,
 }: {
   template: TemplateId;
@@ -131,10 +218,18 @@ function OfferPreview({
   material: string;
   pricePerM2: string;
   specialOfferText: string;
+  tileDisplay: TileImageDisplay;
   previewRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const title = `${format} ${series}${color ? ` ${color}` : ""}`;
   const logoBg = logoBgClass(logoVariant);
+  const tileItem = {
+    format,
+    tileRotationDegrees: tileDisplay.rotationDegrees,
+    tileObjectFit: tileDisplay.objectFit,
+    tileObjectPosition: tileDisplay.objectPosition,
+    tileZoomPercent: tileDisplay.zoomPercent,
+  };
 
   /* ── split-right ── */
   if (template === "split-right") {
@@ -147,7 +242,13 @@ function OfferPreview({
         <div className="flex min-h-0 flex-col border-l border-slate-200 px-5 py-5">
           <span className={`w-fit ${badge}`}>{specialOfferText}</span>
           <div className="mt-4 flex-1 overflow-hidden rounded ring-1 ring-slate-200">
-            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+            <TileImage
+              src={tileSrc}
+              alt=""
+              template="split-right"
+              item={tileItem}
+              className="h-full w-full"
+            />
           </div>
           <div className="mt-3">
             <p className="text-sm font-bold uppercase tracking-wide text-slate-900">{title}</p>
@@ -170,7 +271,13 @@ function OfferPreview({
           <span className={badgeLight}>{specialOfferText}</span>
         </div>
         <div className="absolute right-5 top-14 h-28 w-24 overflow-hidden rounded shadow-xl ring-2 ring-white/80">
-          <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+          <TileImage
+            src={tileSrc}
+            alt=""
+            template="price-overlay"
+            item={tileItem}
+            className="h-full w-full"
+          />
         </div>
         <div className="absolute inset-x-0 bottom-0 px-6 pb-5 pt-12">
           <div className="flex items-end justify-between gap-4 text-white">
@@ -203,7 +310,13 @@ function OfferPreview({
           </div>
           <div className="mt-4 flex flex-1 items-center gap-5">
             <div className="h-full max-h-[8rem] w-[6.5rem] shrink-0 overflow-hidden rounded ring-1 ring-slate-200">
-              <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+              <TileImage
+                src={tileSrc}
+                alt=""
+                template="clean-card"
+                item={tileItem}
+                className="h-full w-full"
+              />
             </div>
             <p className="text-2xl font-bold tabular-nums text-[#1a1f3d]">{pricePerM2}</p>
           </div>
@@ -227,7 +340,13 @@ function OfferPreview({
             <p className="mt-2 text-2xl font-bold tabular-nums text-[#fbbf24] drop-shadow">{pricePerM2}</p>
           </div>
           <div className="h-28 w-24 shrink-0 overflow-hidden rounded shadow-2xl ring-2 ring-white/80">
-            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+            <TileImage
+              src={tileSrc}
+              alt=""
+              template="hero-focus"
+              item={tileItem}
+              className="h-full w-full"
+            />
           </div>
         </div>
       </div>
@@ -243,7 +362,13 @@ function OfferPreview({
             <img src={heroSrc} alt="" className="h-full w-full object-cover" />
           </div>
           <div className="flex w-[22%] min-w-[90px] shrink-0 flex-col overflow-hidden border-l border-slate-100">
-            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+            <TileImage
+              src={tileSrc}
+              alt=""
+              template="catalog-strip"
+              item={tileItem}
+              className="h-full w-full"
+            />
           </div>
           <div className={`absolute left-5 top-4 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         </div>
@@ -272,7 +397,13 @@ function OfferPreview({
         <div className="flex min-h-0 flex-col bg-[#1a1f3d] px-5 py-5 text-white">
           <span className={`w-fit ${badgeLight}`}>{specialOfferText}</span>
           <div className="mt-4 flex-1 overflow-hidden rounded ring-1 ring-white/20">
-            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+            <TileImage
+              src={tileSrc}
+              alt=""
+              template="minimal-price"
+              item={tileItem}
+              className="h-full w-full"
+            />
           </div>
           <div className="mt-3">
             <p className="text-sm font-bold uppercase leading-snug tracking-wide">{title}</p>
@@ -293,7 +424,13 @@ function OfferPreview({
         <div className={`absolute left-5 top-5 flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
         <span className={`absolute right-5 top-5 ${badgeLight}`}>{specialOfferText}</span>
         <div className="absolute bottom-5 right-5 h-28 w-24 overflow-hidden rounded shadow-2xl ring-2 ring-white/80">
-          <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+          <TileImage
+            src={tileSrc}
+            alt=""
+            template="price-banner"
+            item={tileItem}
+            className="h-full w-full"
+          />
         </div>
         <div className="absolute bottom-5 left-5 right-36 text-white">
           <p className="text-lg font-bold uppercase tracking-wide drop-shadow">{title}</p>
@@ -315,7 +452,13 @@ function OfferPreview({
         <div className="flex min-h-0 flex-col rounded-md bg-white p-4 shadow ring-1 ring-slate-100">
           <span className={`w-fit ${badge}`}>{specialOfferText}</span>
           <div className="mt-3 flex-1 overflow-hidden rounded ring-1 ring-slate-200">
-            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+            <TileImage
+              src={tileSrc}
+              alt=""
+              template="duo-frame"
+              item={tileItem}
+              className="h-full w-full"
+            />
           </div>
           <div className="mt-3">
             <p className="text-sm font-bold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
@@ -335,7 +478,13 @@ function OfferPreview({
           <div className={`flex items-center justify-center rounded-xl ${logoBg} px-4 py-3`}><img src={logoSrc} alt="" className="h-auto w-36 object-contain" /></div>
           <span className={`mt-3 w-fit ${badge}`}>{specialOfferText}</span>
           <div className="mt-4 flex-1 overflow-hidden rounded ring-1 ring-slate-200">
-            <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+            <TileImage
+              src={tileSrc}
+              alt=""
+              template="editorial-left"
+              item={tileItem}
+              className="h-full w-full"
+            />
           </div>
           <div className="mt-3">
             <p className="text-sm font-bold uppercase leading-snug tracking-wide text-slate-900">{title}</p>
@@ -355,7 +504,13 @@ function OfferPreview({
     return (
       <div ref={previewRef} className="grid aspect-[16/9] w-full grid-cols-[36%_1fr] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="min-h-0 overflow-hidden bg-[#f5f6f8]">
-          <img src={tileSrc} alt="" className="h-full w-full object-cover" />
+          <TileImage
+            src={tileSrc}
+            alt=""
+            template="tile-dominant"
+            item={tileItem}
+            className="h-full w-full"
+          />
         </div>
         <div className="relative flex min-h-0 flex-col">
           <div className="min-h-0 flex-1 overflow-hidden">
@@ -388,6 +543,47 @@ export function OffersBuilder() {
   const [material, setMaterial] = useState(defaults.material);
   const [pricePerM2, setPricePerM2] = useState(defaults.pricePerM2);
   const [specialOfferText, setSpecialOfferText] = useState(defaults.specialOfferText);
+  const [globalTileDisplay, setGlobalTileDisplay] = useState<TileImageDisplay>({
+    ...DEFAULT_TILE_IMAGE_DISPLAY,
+  });
+  const [templateTileDisplay, setTemplateTileDisplay] = useState<
+    Partial<Record<TemplateId, TemplateTileCustomization>>
+  >({});
+
+  function updateGlobalTileDisplay(patch: Partial<TileImageDisplay>) {
+    setGlobalTileDisplay((prev) => ({ ...prev, ...patch }));
+  }
+
+  function updateTemplateTileDisplay(
+    templateId: TemplateId,
+    patch: Partial<TemplateTileCustomization>,
+  ) {
+    setTemplateTileDisplay((prev) => {
+      const current = prev[templateId] ?? {
+        enabled: false,
+        ...globalTileDisplay,
+      };
+      return {
+        ...prev,
+        [templateId]: { ...current, ...patch },
+      };
+    });
+  }
+
+  function toggleTemplateTileCustom(templateId: TemplateId, enabled: boolean) {
+    setTemplateTileDisplay((prev) => {
+      const current = prev[templateId] ?? {
+        enabled: false,
+        ...globalTileDisplay,
+      };
+      return {
+        ...prev,
+        [templateId]: enabled
+          ? { ...current, enabled: true, ...globalTileDisplay }
+          : { ...current, enabled: false },
+      };
+    });
+  }
 
   const refs = useMemo(
     () => ({
@@ -436,10 +632,12 @@ export function OffersBuilder() {
       <div className="grid gap-4 rounded border border-neutral-200 bg-neutral-50 p-4 md:grid-cols-2">
         <DropZone
           label="Imagen ambiente"
+          previewSrc={heroSrc}
           onFile={async (file) => setHeroSrc(await fileToDataUrl(file))}
         />
         <DropZone
           label="Imagen pieza"
+          previewSrc={tileSrc}
           onFile={async (file) => setTileSrc(await fileToDataUrl(file))}
         />
         <input
@@ -494,8 +692,35 @@ export function OffersBuilder() {
         </label>
       </div>
 
+      <div className="rounded border border-neutral-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-neutral-800">Visualización global de la pieza</h2>
+        <p className="mt-1 text-xs text-neutral-500">
+          Se aplica a todas las plantillas salvo que actives ajustes individuales en alguna.
+        </p>
+        <div className="mt-3">
+          <TileDisplayControls
+            rotationDegrees={globalTileDisplay.rotationDegrees}
+            objectFit={globalTileDisplay.objectFit}
+            objectPosition={globalTileDisplay.objectPosition}
+            zoomPercent={globalTileDisplay.zoomPercent}
+            onRotationChange={(value) => updateGlobalTileDisplay({ rotationDegrees: value })}
+            onObjectFitChange={(value) => updateGlobalTileDisplay({ objectFit: value })}
+            onObjectPositionChange={(value) => updateGlobalTileDisplay({ objectPosition: value })}
+            onZoomChange={(value) => updateGlobalTileDisplay({ zoomPercent: value })}
+          />
+        </div>
+      </div>
+
       <div className="space-y-6">
-        {templateList.map((tpl) => (
+        {templateList.map((tpl) => {
+          const templateCustom = templateTileDisplay[tpl.id];
+          const effectiveTileDisplay = resolveBuilderTileDisplay(
+            tpl.id,
+            globalTileDisplay,
+            templateCustom,
+          );
+
+          return (
           <section key={tpl.id} className="space-y-2">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-700">
@@ -518,6 +743,44 @@ export function OffersBuilder() {
                 </button>
               </div>
             </div>
+
+            <div className="rounded border border-neutral-200 bg-neutral-50 p-3">
+              <label className="flex items-center gap-2 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={templateCustom?.enabled ?? false}
+                  onChange={(e) => toggleTemplateTileCustom(tpl.id, e.target.checked)}
+                />
+                Personalizar visualización de la pieza para esta plantilla
+              </label>
+              {templateCustom?.enabled ? (
+                <div className="mt-3">
+                  <TileDisplayControls
+                    compact
+                    rotationDegrees={templateCustom.rotationDegrees}
+                    objectFit={templateCustom.objectFit}
+                    objectPosition={templateCustom.objectPosition}
+                    zoomPercent={templateCustom.zoomPercent}
+                    onRotationChange={(value) =>
+                      updateTemplateTileDisplay(tpl.id, { rotationDegrees: value })
+                    }
+                    onObjectFitChange={(value) =>
+                      updateTemplateTileDisplay(tpl.id, { objectFit: value })
+                    }
+                    onObjectPositionChange={(value) =>
+                      updateTemplateTileDisplay(tpl.id, { objectPosition: value })
+                    }
+                    onZoomChange={(value) =>
+                      updateTemplateTileDisplay(tpl.id, { zoomPercent: value })
+                    }
+                  />
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-neutral-500">
+                  </p>
+              )}
+            </div>
+
             <OfferPreview
               template={tpl.id}
               previewRef={refs[tpl.id]}
@@ -531,9 +794,11 @@ export function OffersBuilder() {
               material={material}
               pricePerM2={pricePerM2}
               specialOfferText={specialOfferText}
+              tileDisplay={effectiveTileDisplay}
             />
           </section>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

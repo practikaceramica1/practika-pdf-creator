@@ -9,8 +9,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Practika · Catálogos PDF",
-  description: "Generación de catálogos (novedades / ofertas)",
+  title: "Practika · Marketing PDF",
+  description: "Ofertas, dossiers y catálogos PDF",
 };
 
 export default function RootLayout({

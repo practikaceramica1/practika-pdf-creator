@@ -1,4 +1,5 @@
 import "@/app/print/ofertas/print.css";
+import { TileImage } from "@/components/offers/TileImage";
 import { logoSrcForVariant, type OfferItem, type OffersCatalog } from "@/lib/offers-types";
 
 const palette = {
@@ -57,9 +58,13 @@ function SplitRightTemplate({ item }: { item: OfferItem }) {
           <SpecialBadge text={item.specialOfferText} />
         </div>
         {item.tileImage ? (
-          <div className="mx-auto mt-[7mm] h-[100mm] w-[44mm] overflow-hidden border border-black/10">
-            <Img src={item.tileImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
-          </div>
+          <TileImage
+            src={item.tileImage}
+            alt={`${item.series} pieza`}
+            template="split-right"
+            item={item}
+            className="mx-auto mt-[7mm] h-[100mm] w-[44mm] border border-black/10"
+          />
         ) : null}
         <div className="mt-auto pt-[5mm]">
           <OfferMeta item={item} dark />
@@ -89,9 +94,13 @@ function PriceOverlayTemplate({ item }: { item: OfferItem }) {
             <SpecialBadge text={item.specialOfferText} />
           </div>
           {item.tileImage ? (
-            <div className="mt-[6mm] h-[86mm] w-[50mm] overflow-hidden border border-black/10">
-              <Img src={item.tileImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
-            </div>
+            <TileImage
+              src={item.tileImage}
+              alt={`${item.series} pieza`}
+              template="price-overlay"
+              item={item}
+              className="mt-[6mm] h-[86mm] w-[50mm] border border-black/10"
+            />
           ) : null}
           <div className="mt-[6mm] border-t border-[#e8e2d6] pt-[4mm]">
             <OfferMeta item={item} dark />
@@ -121,9 +130,13 @@ function CleanCardTemplate({ item }: { item: OfferItem }) {
             <OfferMeta item={item} dark />
           </div>
           {item.tileImage ? (
-            <div className="mt-[7mm] h-[58mm] w-[42mm] overflow-hidden border border-black/10">
-              <Img src={item.tileImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
-            </div>
+            <TileImage
+              src={item.tileImage}
+              alt={`${item.series} pieza`}
+              template="clean-card"
+              item={item}
+              className="mt-[7mm] h-[58mm] w-[42mm] border border-black/10"
+            />
           ) : null}
           <div className="mt-auto border-t border-[#ebe4d8] pt-[5mm]">
             <p className="text-[8pt] uppercase tracking-[0.16em] text-[#7c5a3a]">Precio especial</p>
@@ -156,9 +169,13 @@ function HeroFocusTemplate({ item }: { item: OfferItem }) {
         {item.material ? <p className="mt-1 text-[10pt] opacity-90">{item.material}</p> : null}
       </div>
       {item.tileImage ? (
-        <div className="absolute bottom-[12mm] right-[12mm] h-[56mm] w-[34mm] overflow-hidden border-2 border-white/85 shadow-xl">
-          <Img src={item.tileImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
-        </div>
+        <TileImage
+          src={item.tileImage}
+          alt={`${item.series} pieza`}
+          template="hero-focus"
+          item={item}
+          className="absolute bottom-[12mm] right-[12mm] h-[56mm] w-[34mm] border-2 border-white/85 shadow-xl"
+        />
       ) : null}
     </div>
   );
@@ -179,9 +196,13 @@ function CatalogStripTemplate({ item }: { item: OfferItem }) {
         <Img src={item.heroImage} alt={`${item.series} ambiente`} className="h-full w-full object-cover" />
       </div>
       {item.tileImage ? (
-        <div className="absolute left-[227mm] top-[24mm] h-[120mm] w-[40mm] overflow-hidden border border-black/10 bg-white">
-          <Img src={item.tileImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
-        </div>
+        <TileImage
+          src={item.tileImage}
+          alt={`${item.series} pieza`}
+          template="catalog-strip"
+          item={item}
+          className="absolute left-[227mm] top-[24mm] h-[120mm] w-[40mm] border border-black/10 bg-white"
+        />
       ) : null}
 
       <div className="absolute inset-x-[12mm] bottom-[10mm] border-t border-[#ddd5c7] pt-[4mm]">
@@ -216,9 +237,13 @@ function MinimalPriceTemplate({ item }: { item: OfferItem }) {
             <SpecialBadge text={item.specialOfferText} />
           </div>
           {item.tileImage ? (
-            <div className="mt-[8mm] h-[82mm] w-[50mm] overflow-hidden border border-black/10 bg-white">
-              <Img src={item.tileImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
-            </div>
+            <TileImage
+              src={item.tileImage}
+              alt={`${item.series} pieza`}
+              template="minimal-price"
+              item={item}
+              className="mt-[8mm] h-[82mm] w-[50mm] border border-black/10 bg-white"
+            />
           ) : null}
           <div className="mt-[8mm]">
             <p className="text-[16pt] font-semibold uppercase leading-tight tracking-[0.04em]" style={{ color: palette.ink }}>
@@ -273,8 +298,14 @@ function DuoFrameTemplate({ item }: { item: OfferItem }) {
       <div className="absolute left-[10mm] top-[10mm] h-[120mm] w-[190mm] overflow-hidden border-[2mm]" style={{ borderColor: palette.stone }}>
         <Img src={item.heroImage} alt={`${item.series} ambiente`} className="h-full w-full object-cover" />
       </div>
-      <div className="absolute left-[170mm] top-[78mm] z-10 h-[82mm] w-[65mm] overflow-hidden border-[2mm] border-white shadow-xl">
-        <Img src={item.tileImage ?? item.heroImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
+      <div className="absolute left-[170mm] top-[78mm] z-10 h-[82mm] w-[65mm] border-[2mm] border-white shadow-xl">
+        <TileImage
+          src={item.tileImage ?? item.heroImage}
+          alt={`${item.series} pieza`}
+          template="duo-frame"
+          item={item}
+          className="h-full w-full"
+        />
       </div>
       <div className="absolute right-[12mm] top-[12mm] w-[84mm] rounded bg-white/95 p-[5mm]">
         <Logo item={item} dark />
@@ -318,8 +349,14 @@ function EditorialLeftTemplate({ item }: { item: OfferItem }) {
 function TileDominantTemplate({ item }: { item: OfferItem }) {
   return (
     <div className="offer-page bg-white">
-      <div className="absolute left-[10mm] top-[10mm] h-[160mm] w-[120mm] overflow-hidden border border-black/10 bg-[#f6f4ef]">
-        <Img src={item.tileImage ?? item.heroImage} alt={`${item.series} pieza`} className="h-full w-full object-cover" />
+      <div className="absolute left-[10mm] top-[10mm] h-[160mm] w-[120mm] border border-black/10 bg-[#f6f4ef]">
+        <TileImage
+          src={item.tileImage ?? item.heroImage}
+          alt={`${item.series} pieza`}
+          template="tile-dominant"
+          item={item}
+          className="h-full w-full"
+        />
       </div>
       <div className="absolute left-[136mm] top-[10mm] h-[95mm] w-[174mm] overflow-hidden border border-black/10">
         <Img src={item.heroImage} alt={`${item.series} ambiente`} className="h-full w-full object-cover" />

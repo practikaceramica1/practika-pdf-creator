@@ -1,0 +1,36 @@
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+.dossier-print-root {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #1a1a1a;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.dossier-page {
+  width: 297mm;
+  height: 210mm;
+  box-sizing: border-box;
+  page-break-after: always;
+  break-after: page;
+  position: relative;
+  overflow: hidden;
+}
+
+.dossier-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+.dossier-stone {
+  background: #c6c1b1;
+}
+
+.dossier-ink {
+  color: #1a1f3d;
+}
