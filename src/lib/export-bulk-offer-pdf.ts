@@ -3,23 +3,14 @@ import "server-only";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { BulkOfferDetail } from "@/lib/bulk-offers-types";
-import { lineTotal } from "@/lib/bulk-offers-types";
-import {
-  formatOfferSummaryForPdf,
-  loadLineImages,
-} from "@/lib/export-bulk-offer-shared";
-import {
-  brandLogoDataUrl,
-  formatOfferDocumentDate,
-  formatOfferDocumentMeta,
-  LOGO_ASPECT,
-  PRACTIKA_BRAND,
-} from "@/lib/practika-brand-export";
+import { formatOfferSummaryForPdf, loadLineImages } from "@/lib/export-bulk-offer-shared";
+import { brandLogoDataUrl, formatOfferDocumentMeta, EXPORT_HEADER_LOGO_HEIGHT_MM, LOGO_ASPECT, PRACTIKA_BRAND } from "@/lib/practika-brand-export";
 
 const rgb = (color: (typeof PRACTIKA_BRAND)[keyof typeof PRACTIKA_BRAND]["rgb"]) =>
   [...color] as [number, number, number];
 
 const MARGIN = 14;
+const IMAGE_COL_WIDTH = 16;
 
 function drawBrandHeader(doc: jsPDF, offer: BulkOfferDetail) {
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -30,9 +21,10 @@ function drawBrandHeader(doc: jsPDF, offer: BulkOfferDetail) {
 
   const logo = brandLogoDataUrl("white");
   if (logo) {
-    const logoH = 12;
+    const logoH = EXPORT_HEADER_LOGO_HEIGHT_MM;
     const logoW = logoH * LOGO_ASPECT;
-    doc.addImage(logo, "PNG", MARGIN, 6, logoW, logoH);
+    const logoY = (bannerH - logoH) / 2;
+    doc.addImage(logo, "PNG", MARGIN, logoY, logoW, logoH);
   } else {
     doc.setTextColor(...rgb(PRACTIKA_BRAND.white.rgb));
     doc.setFont("helvetica", "bold");
@@ -68,31 +60,16 @@ function drawBrandHeader(doc: jsPDF, offer: BulkOfferDetail) {
   return bannerH + 26;
 }
 
-function drawBrandFooter(doc: jsPDF) {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-
-  doc.setFillColor(...rgb(PRACTIKA_BRAND.navy.rgb));
-  doc.rect(0, pageHeight - 10, pageWidth, 10, "F");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(184, 192, 220);
-  doc.text("practikaceramica.com  ·  Practika Cerámica", pageWidth / 2, pageHeight - 4.5, { align: "center" });
-}
-
 export async function buildBulkOfferPdf(offer: BulkOfferDetail): Promise<Buffer> {
   const lines = formatOfferSummaryForPdf(offer);
   const images = await loadLineImages(offer);
-  const grandTotal = offer.lines.reduce((sum, line) => sum + (lineTotal(line) ?? 0), 0);
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
   const tableStartY = drawBrandHeader(doc, offer);
 
   autoTable(doc, {
     startY: tableStartY,
-    margin: { left: MARGIN, right: MARGIN, bottom: 18 },
+    margin: { left: MARGIN, right: MARGIN, bottom: 12 },
     head: [["", "Serie", "Material", "Formato", "Color", "m²", "€/m²", "Total €", "Comentarios"]],
     body: lines.map((line) => [
       "",
@@ -108,9 +85,10 @@ export async function buildBulkOfferPdf(offer: BulkOfferDetail): Promise<Buffer>
     theme: "grid",
     styles: {
       fontSize: 8,
-      cellPadding: 2.2,
+      cellPadding: 2,
       overflow: "linebreak",
       valign: "middle",
+      minCellHeight: 14,
       textColor: rgb(PRACTIKA_BRAND.text.rgb),
       lineColor: rgb(PRACTIKA_BRAND.border.rgb),
       lineWidth: 0.1,
@@ -120,12 +98,16 @@ export async function buildBulkOfferPdf(offer: BulkOfferDetail): Promise<Buffer>
       textColor: rgb(PRACTIKA_BRAND.white.rgb),
       fontStyle: "bold",
       halign: "center",
+      minCellHeight: 10,
+    },
+    bodyStyles: {
+      minCellHeight: 14,
     },
     alternateRowStyles: {
       fillColor: rgb(PRACTIKA_BRAND.rowAlt.rgb),
     },
     columnStyles: {
-      0: { cellWidth: 18 },
+      0: { cellWidth: IMAGE_COL_WIDTH, minCellHeight: 14 },
       1: { cellWidth: 28, fontStyle: "bold" },
       5: { halign: "right" },
       6: { halign: "right" },
@@ -136,44 +118,17 @@ export async function buildBulkOfferPdf(offer: BulkOfferDetail): Promise<Buffer>
       if (data.section !== "body" || data.column.index !== 0) return;
       const image = images[data.row.index];
       if (!image) return;
+
+      const pad = 1;
+      const maxSize = Math.min(data.cell.width - pad * 2, data.cell.height - pad * 2, 12);
+      if (maxSize <= 0) return;
+
       const format = image.includes("image/png") ? "PNG" : "JPEG";
-      doc.addImage(image, format, data.cell.x + 1.5, data.cell.y + 1.5, 14, 14);
-    },
-    didDrawPage: () => {
-      drawBrandFooter(doc);
+      const x = data.cell.x + (data.cell.width - maxSize) / 2;
+      const y = data.cell.y + (data.cell.height - maxSize) / 2;
+      doc.addImage(image, format, x, y, maxSize, maxSize);
     },
   });
-
-  const finalY = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? tableStartY + 40;
-  const summaryY = Math.min(finalY + 8, pageHeight - 24);
-  const summaryW = 78;
-  const summaryX = pageWidth - MARGIN - summaryW;
-
-  doc.setFillColor(...rgb(PRACTIKA_BRAND.highlight.rgb));
-  doc.roundedRect(summaryX, summaryY, summaryW, 18, 2, 2, "F");
-  doc.setDrawColor(...rgb(PRACTIKA_BRAND.border.rgb));
-  doc.setLineWidth(0.2);
-  doc.roundedRect(summaryX, summaryY, summaryW, 18, 2, 2, "S");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...rgb(PRACTIKA_BRAND.navy.rgb));
-  doc.text("TOTAL OFERTA", summaryX + 5, summaryY + 7);
-
-  doc.setFillColor(...rgb(PRACTIKA_BRAND.accent.rgb));
-  doc.roundedRect(summaryX + summaryW - 38, summaryY + 9, 33, 7, 1.5, 1.5, "F");
-  doc.setFontSize(10);
-  doc.text(
-    `${grandTotal.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`,
-    summaryX + summaryW - 5,
-    summaryY + 14,
-    { align: "right" },
-  );
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
-  doc.setTextColor(...rgb(PRACTIKA_BRAND.muted.rgb));
-  doc.text(`Generado el ${formatOfferDocumentDate(new Date().toISOString())}`, summaryX + 5, summaryY + 14);
 
   return Buffer.from(doc.output("arraybuffer"));
 }

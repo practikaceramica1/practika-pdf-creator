@@ -20,6 +20,10 @@ export const PRACTIKA_BRAND = {
 
 export const LOGO_ASPECT = 1182 / 611;
 
+/** Altura del logo en cabecera de exportaciones (PDF mm / Excel px). */
+export const EXPORT_HEADER_LOGO_HEIGHT_MM = 17;
+export const EXPORT_HEADER_LOGO_HEIGHT_PX = 72;
+
 export type BrandLogoVariant = "white" | "anthracite" | "beige" | "blue";
 
 export function loadBrandLogoBuffer(variant: BrandLogoVariant = "anthracite"): Buffer | null {

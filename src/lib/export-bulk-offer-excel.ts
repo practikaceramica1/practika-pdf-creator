@@ -4,8 +4,10 @@ import ExcelJS from "exceljs";
 import type { BulkOfferDetail } from "@/lib/bulk-offers-types";
 import { lineTotal, resolveLineImage } from "@/lib/bulk-offers-types";
 import { fetchImageBuffer } from "@/lib/export-bulk-offer-shared";
+import { formatColorNameForExport } from "@/lib/color-variant-label";
 import {
   EXPORT_FONT,
+  EXPORT_HEADER_LOGO_HEIGHT_PX,
   formatOfferDocumentMeta,
   loadBrandLogoBuffer,
   LOGO_ASPECT,
@@ -62,21 +64,20 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
 
   sheet.properties.defaultColWidth = 12;
 
-  // Banner navy
-  sheet.mergeCells(`A1:I4`);
+  // Banner navy (relleno por celdas; no fusionar A1:I4 entero — choca con F1:I3)
   fillRange(sheet, "A1:I4", PRACTIKA_BRAND.navy.argb);
-  sheet.getRow(1).height = 18;
-  sheet.getRow(2).height = 18;
-  sheet.getRow(3).height = 18;
-  sheet.getRow(4).height = 10;
+  sheet.getRow(1).height = 22;
+  sheet.getRow(2).height = 22;
+  sheet.getRow(3).height = 22;
+  sheet.getRow(4).height = 12;
 
   const logo = loadBrandLogoBuffer("white");
   if (logo) {
     const logoId = workbook.addImage({ buffer: logo as unknown as ExcelJS.Buffer, extension: "png" });
-    const logoHeightPx = 54;
+    const logoHeightPx = EXPORT_HEADER_LOGO_HEIGHT_PX;
     const logoWidthPx = Math.round(logoHeightPx * LOGO_ASPECT);
     sheet.addImage(logoId, {
-      tl: { col: 0.2, row: 0.15 },
+      tl: { col: 0.2, row: 0.25 },
       ext: { width: logoWidthPx, height: logoHeightPx },
     });
   } else {
@@ -130,7 +131,7 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
     row.getCell(2).value = line.seriesName;
     row.getCell(3).value = line.material;
     row.getCell(4).value = line.formatDisplay || line.formatLabel;
-    row.getCell(5).value = line.colorName;
+    row.getCell(5).value = formatColorNameForExport(line.colorName);
     row.getCell(6).value = line.squareMeters ?? "";
     row.getCell(7).value = line.pricePerM2 ?? "";
     row.getCell(8).value = lineTotal(line) ?? "";
@@ -171,45 +172,13 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
     if (image) {
       const imageId = workbook.addImage({ buffer: image.buffer as unknown as ExcelJS.Buffer, extension: image.extension });
       sheet.addImage(imageId, {
-        tl: { col: 0.12, row: rowIndex - 1 + 0.12 },
-        ext: { width: 68, height: 68 },
+        tl: { col: 0.12, row: rowIndex - 1 + 0.18 },
+        ext: { width: 52, height: 52 },
       });
     }
 
     rowIndex++;
   }
-
-  const grandTotal = offer.lines.reduce((sum, line) => sum + (lineTotal(line) ?? 0), 0);
-  const summaryStart = rowIndex + 1;
-  sheet.getRow(summaryStart).height = 10;
-
-  sheet.mergeCells(`F${summaryStart + 1}:G${summaryStart + 1}`);
-  sheet.mergeCells(`H${summaryStart + 1}:I${summaryStart + 1}`);
-
-  const totalLabelCell = sheet.getCell(`F${summaryStart + 1}`);
-  totalLabelCell.value = "TOTAL OFERTA";
-  totalLabelCell.font = { name: EXPORT_FONT, size: 11, bold: true, color: { argb: PRACTIKA_BRAND.navy.argb } };
-  totalLabelCell.alignment = { horizontal: "right", vertical: "middle" };
-  totalLabelCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: PRACTIKA_BRAND.highlight.argb } };
-  thinBorder(totalLabelCell);
-
-  const totalValueCell = sheet.getCell(`H${summaryStart + 1}`);
-  totalValueCell.value = grandTotal;
-  totalValueCell.numFmt = '#,##0.00" €"';
-  totalValueCell.font = { name: EXPORT_FONT, size: 12, bold: true, color: { argb: PRACTIKA_BRAND.navy.argb } };
-  totalValueCell.alignment = { horizontal: "right", vertical: "middle" };
-  totalValueCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: PRACTIKA_BRAND.accent.argb } };
-  thinBorder(totalValueCell);
-  sheet.getRow(summaryStart + 1).height = 24;
-
-  const footerRow = summaryStart + 3;
-  sheet.mergeCells(`A${footerRow}:I${footerRow}`);
-  fillRange(sheet, `A${footerRow}:I${footerRow}`, PRACTIKA_BRAND.navy.argb);
-  sheet.getRow(footerRow).height = 22;
-  const footerCell = sheet.getCell(`A${footerRow}`);
-  footerCell.value = "practikaceramica.com  ·  Practika Cerámica";
-  footerCell.font = { name: EXPORT_FONT, size: 9, color: { argb: "FFB8C0DC" } };
-  footerCell.alignment = { horizontal: "center", vertical: "middle" };
 
   sheet.pageSetup = {
     paperSize: 9,

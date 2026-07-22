@@ -2,6 +2,7 @@ import "server-only";
 
 import type { BulkOfferDetail } from "@/lib/bulk-offers-types";
 import { lineTotal, resolveLineImage } from "@/lib/bulk-offers-types";
+import { formatColorNameForExport } from "@/lib/color-variant-label";
 
 export async function fetchImageBuffer(
   url: string,
@@ -48,7 +49,7 @@ export function formatOfferSummaryForPdf(offer: BulkOfferDetail) {
     series: line.seriesName,
     material: line.material,
     format: line.formatDisplay || line.formatLabel,
-    color: line.colorName,
+    color: formatColorNameForExport(line.colorName),
     squareMeters: formatNumber(line.squareMeters),
     pricePerM2: formatMoney(line.pricePerM2),
     total: formatMoney(lineTotal(line)),

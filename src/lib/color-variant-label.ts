@@ -23,17 +23,16 @@ type ColorSibling = { name: string; variantType: ColorVariantType };
 export function buildColorDisplayLabel(
   colorName: string,
   variantType: ColorVariantType,
-  siblings: ColorSibling[],
+  _siblings: ColorSibling[],
 ): string {
   const normalizedName = colorName.trim();
-  const sameNameCount = siblings.filter(
-    (s) => s.name.localeCompare(normalizedName, "es", { sensitivity: "accent" }) === 0,
-  ).length;
+  if (variantType === "regular") return normalizedName;
+  return `${normalizedName} · ${colorVariantTypeLabel(variantType)}`;
+}
 
-  if (sameNameCount > 1 || variantType !== "regular") {
-    return `${normalizedName} · ${colorVariantTypeLabel(variantType)}`;
-  }
-  return normalizedName;
+/** Normaliza nombres guardados antes del cambio de etiquetas (p. ej. "BEIGE · Regular"). */
+export function formatColorNameForExport(colorName: string): string {
+  return colorName.replace(/\s·\sRegular\s*$/i, "").trim();
 }
 
 export function compareArticleColorsLikeWeb(
