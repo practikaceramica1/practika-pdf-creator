@@ -55,6 +55,22 @@ export default function Home() {
         <li>
           <Link
             className="font-medium text-amber-900 underline-offset-4 hover:underline"
+            href="/ofertas-masivas"
+          >
+            Creador de ofertas masivas (CRM → Excel / PDF)
+          </Link>
+        </li>
+        <li>
+          <Link
+            className="font-medium text-amber-900 underline-offset-4 hover:underline"
+            href="/ofertas-masivas/historial"
+          >
+            Historial de ofertas guardadas
+          </Link>
+        </li>
+        <li>
+          <Link
+            className="font-medium text-amber-900 underline-offset-4 hover:underline"
             href="/ofertas"
           >
             Creador visual (PNG/PDF por plantilla)
