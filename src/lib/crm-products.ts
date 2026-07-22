@@ -2,6 +2,11 @@ import "server-only";
 
 import { formatLabelFromCm } from "@/lib/format-display";
 import type { BulkOfferProductRow } from "@/lib/bulk-offers-types";
+import {
+  buildColorDisplayLabel,
+  compareColorOptions,
+  normalizeColorVariantType,
+} from "@/lib/color-variant-label";
 import { buildStoragePublicUrl } from "@/lib/storage-public-url";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,7 +39,7 @@ export async function fetchBulkOfferProductRows(): Promise<BulkOfferProductRow[]
     formatIds.length > 0
       ? await supabase
           .from("article_colors")
-          .select("id,format_material_id,color_name,status,sku")
+          .select("id,format_material_id,color_name,variant_type,status,sku,sort_order")
           .in("format_material_id", formatIds)
       : { data: [], error: null };
   if (colorsError) throw new Error(colorsError.message);
@@ -61,14 +66,23 @@ export async function fetchBulkOfferProductRows(): Promise<BulkOfferProductRow[]
         ? formatLabelFromCm(w, h)
         : f.format_label || "";
 
-    const formatColors = (colorsByFormat.get(f.id) || [])
+    const rawColors = (colorsByFormat.get(f.id) || [])
       .filter((c) => c.color_name)
-      .sort((a, b) => (a.color_name || "").localeCompare(b.color_name || "", "es"))
       .map((c) => ({
         id: c.id,
-        name: c.color_name!,
+        name: c.color_name!.trim(),
+        variantType: normalizeColorVariantType(c.variant_type),
+        sortOrder: Number(c.sort_order) || 0,
         image: c.sku ? buildStoragePublicUrl("r2", c.sku) : undefined,
         status: c.status || "published",
+      }));
+
+    const siblings = rawColors.map((c) => ({ name: c.name, variantType: c.variantType }));
+    const formatColors = rawColors
+      .sort(compareColorOptions)
+      .map((c) => ({
+        ...c,
+        displayLabel: buildColorDisplayLabel(c.name, c.variantType, siblings),
       }));
 
     rows.push({

@@ -1,10 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/ofertas-masivas", "/api/products", "/api/bulk-offers"];
+const PUBLIC_PATHS = new Set(["/login"]);
 
-function isProtectedPath(pathname: string) {
-  return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.has(pathname);
 }
 
 export async function updateSession(request: NextRequest) {
@@ -29,7 +29,15 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (
+    authError &&
+    (authError.code === "refresh_token_not_found" || authError.message.includes("Refresh Token"))
+  ) {
+    await supabase.auth.signOut();
+  }
 
   const pathname = request.nextUrl.pathname;
   const isLoginPage = pathname === "/login";
@@ -38,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (!user && isProtectedPath(pathname)) {
+  if (!user && !isPublicPath(pathname)) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
@@ -47,5 +55,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  response.headers.set("x-pathname", pathname);
   return response;
 }

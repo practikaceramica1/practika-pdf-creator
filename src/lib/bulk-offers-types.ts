@@ -1,6 +1,10 @@
+import type { ColorVariantType } from "@/lib/color-variant-label";
+
 export type BulkOfferColorOption = {
   id: string;
   name: string;
+  displayLabel: string;
+  variantType: ColorVariantType;
   image?: string;
   status: string;
 };
@@ -89,7 +93,7 @@ export function productRowToLine(
     material: row.material,
     formatLabel: row.formatLabel,
     formatDisplay: row.formatDisplay,
-    colorName: color.name,
+    colorName: color.displayLabel,
     squareMeters,
     pricePerM2,
     comments,

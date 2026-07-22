@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { headers } from "next/headers";
+import { AppNav } from "@/components/AppNav";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -13,14 +16,24 @@ export const metadata: Metadata = {
   description: "Ofertas, dossiers y catálogos PDF",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const pathname = (await headers()).get("x-pathname") || "";
+  const showAppNav = Boolean(user?.email) && !pathname.startsWith("/ofertas-masivas");
+
   return (
     <html lang="es" className={`${outfit.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="flex min-h-full flex-col font-sans">
+        {showAppNav ? <AppNav userEmail={user!.email!} /> : null}
+        {children}
+      </body>
     </html>
   );
 }

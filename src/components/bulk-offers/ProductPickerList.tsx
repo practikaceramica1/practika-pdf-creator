@@ -177,7 +177,7 @@ function ProductPickerRow({
               >
                 {row.colors.map((color) => (
                   <option key={color.id} value={color.id}>
-                    {color.name}
+                    {color.displayLabel}
                     {color.status !== "published" ? " (borrador)" : ""}
                   </option>
                 ))}
@@ -188,25 +188,40 @@ function ProductPickerRow({
           )}
         </div>
         <div className="md:col-span-4">
-          <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
-            <input
-              value={squareMeters}
-              onChange={(e) => setSquareMeters(e.target.value)}
-              placeholder="m²"
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)] xl:w-24"
-            />
-            <input
-              value={pricePerM2}
-              onChange={(e) => setPricePerM2(e.target.value)}
-              placeholder="€/m²"
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)] xl:w-24"
-            />
-            <input
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-              placeholder="Comentarios / características"
-              className="min-w-0 flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
-            />
+          <div className="flex flex-col gap-2 xl:flex-row xl:items-end">
+            <div className="w-full xl:w-24">
+              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                m²
+              </label>
+              <input
+                value={squareMeters}
+                onChange={(e) => setSquareMeters(e.target.value)}
+                inputMode="decimal"
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
+              />
+            </div>
+            <div className="w-full xl:w-24">
+              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                €/m²
+              </label>
+              <input
+                value={pricePerM2}
+                onChange={(e) => setPricePerM2(e.target.value)}
+                inputMode="decimal"
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                Comentarios
+              </label>
+              <input
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                placeholder="Características"
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
+              />
+            </div>
             <button
               type="button"
               onClick={handleAdd}

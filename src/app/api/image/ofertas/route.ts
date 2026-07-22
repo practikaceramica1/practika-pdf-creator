@@ -1,27 +1,31 @@
-import { chromium } from "playwright";
+import { requireAdminUser } from "@/lib/auth";
+import { pdfBaseUrl, withAuthenticatedPlaywrightPage } from "@/lib/playwright-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const urlObj = new URL(request.url);
-  const pageParam = urlObj.searchParams.get("page");
-  const page = pageParam ? Math.max(Number.parseInt(pageParam, 10) || 1, 1) : 1;
-
-  const base = process.env.PDF_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:3000";
-  const url = `${base}/print/ofertas?page=${page}`;
-
-  let browser;
   try {
-    browser = await chromium.launch({ headless: true });
-    const preview = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-    await preview.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
-    const image = await preview.screenshot({ type: "png", fullPage: false });
+    await requireAdminUser();
+    const urlObj = new URL(request.url);
+    const pageParam = urlObj.searchParams.get("page");
+    const pageNumber = pageParam ? Math.max(Number.parseInt(pageParam, 10) || 1, 1) : 1;
 
-    return new Response(Buffer.from(image), {
+    const base = pdfBaseUrl();
+    const url = `${base}/print/ofertas?page=${pageNumber}`;
+
+    const { buffer, browser } = await withAuthenticatedPlaywrightPage(request, base, async (page) => {
+      await page.setViewportSize({ width: 1920, height: 1080 });
+      await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
+      const image = await page.screenshot({ type: "png", fullPage: false });
+      return Buffer.from(image);
+    });
+    await browser.close();
+
+    return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "image/png",
-        "Content-Disposition": `attachment; filename="practika-oferta-p${page}.png"`,
+        "Content-Disposition": `attachment; filename="practika-oferta-p${pageNumber}.png"`,
       },
     });
   } catch (e) {
@@ -34,7 +38,5 @@ export async function GET(request: Request) {
       }),
       { status: 502, headers: { "Content-Type": "application/json" } },
     );
-  } finally {
-    await browser?.close();
   }
 }

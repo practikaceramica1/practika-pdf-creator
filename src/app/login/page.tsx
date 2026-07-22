@@ -8,7 +8,7 @@ export default async function LoginPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/ofertas-masivas");
+  if (user) redirect("/");
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">

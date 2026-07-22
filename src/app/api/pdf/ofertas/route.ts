@@ -1,25 +1,28 @@
-import { chromium } from "playwright";
+import { requireAdminUser } from "@/lib/auth";
+import { pdfBaseUrl, withAuthenticatedPlaywrightPage } from "@/lib/playwright-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const base = process.env.PDF_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:3000";
-  const url = `${base}/print/ofertas`;
-
-  let browser;
+export async function GET(request: Request) {
   try {
-    browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
-    const pdf = await page.pdf({
-      width: "320mm",
-      height: "180mm",
-      printBackground: true,
-      preferCSSPageSize: true,
-    });
+    await requireAdminUser();
+    const base = pdfBaseUrl();
+    const url = `${base}/print/ofertas`;
 
-    return new Response(Buffer.from(pdf), {
+    const { buffer, browser } = await withAuthenticatedPlaywrightPage(request, base, async (page) => {
+      await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
+      const pdf = await page.pdf({
+        width: "320mm",
+        height: "180mm",
+        printBackground: true,
+        preferCSSPageSize: true,
+      });
+      return Buffer.from(pdf);
+    });
+    await browser.close();
+
+    return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="practika-ofertas.pdf"',
@@ -35,7 +38,5 @@ export async function GET() {
       }),
       { status: 502, headers: { "Content-Type": "application/json" } },
     );
-  } finally {
-    await browser?.close();
   }
 }

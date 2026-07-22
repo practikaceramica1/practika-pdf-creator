@@ -23,7 +23,7 @@ export default function LoginForm() {
         setError("Credenciales inválidas");
         return;
       }
-      const next = searchParams.get("next") || "/ofertas-masivas";
+      const next = searchParams.get("next") || "/";
       router.push(next);
       router.refresh();
     } finally {
