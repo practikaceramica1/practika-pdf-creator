@@ -36,12 +36,18 @@ export function buildColorDisplayLabel(
   return normalizedName;
 }
 
+export function compareArticleColorsLikeWeb(
+  a: { name: string; sortOrder: number },
+  b: { name: string; sortOrder: number },
+): number {
+  if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+  return a.name.localeCompare(b.name, "es", { sensitivity: "accent" });
+}
+
+/** @deprecated Use compareArticleColorsLikeWeb — kept as alias for callers. */
 export function compareColorOptions(
   a: { name: string; variantType: ColorVariantType; sortOrder: number },
   b: { name: string; variantType: ColorVariantType; sortOrder: number },
 ): number {
-  if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-  const byName = a.name.localeCompare(b.name, "es", { sensitivity: "accent" });
-  if (byName !== 0) return byName;
-  return colorVariantTypeLabel(a.variantType).localeCompare(colorVariantTypeLabel(b.variantType), "es");
+  return compareArticleColorsLikeWeb(a, b);
 }

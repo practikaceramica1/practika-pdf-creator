@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BulkOfferProductRow } from "@/lib/bulk-offers-types";
 import { productRowToLine } from "@/lib/bulk-offers-types";
 
@@ -14,7 +14,7 @@ type SortOption = "name-asc" | "name-desc" | "material" | "format-asc";
 
 export function ProductPickerList({ rows, materials, onAddLine }: Props) {
   const [search, setSearch] = useState("");
-  const [materialFilter, setMaterialFilter] = useState("");
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [includeDrafts, setIncludeDrafts] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
 
@@ -23,8 +23,9 @@ export function ProductPickerList({ rows, materials, onAddLine }: Props) {
     if (!includeDrafts) {
       result = result.filter((row) => row.seriesStatus === "published" && row.formatMaterialStatus === "published");
     }
-    if (materialFilter) {
-      result = result.filter((row) => row.material === materialFilter);
+    if (selectedMaterials.length > 0) {
+      const selected = new Set(selectedMaterials);
+      result = result.filter((row) => selected.has(row.material));
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -48,7 +49,7 @@ export function ProductPickerList({ rows, materials, onAddLine }: Props) {
       }
     });
     return result;
-  }, [rows, search, materialFilter, includeDrafts, sortBy]);
+  }, [rows, search, selectedMaterials, includeDrafts, sortBy]);
 
   return (
     <div className="space-y-4">
@@ -60,18 +61,11 @@ export function ProductPickerList({ rows, materials, onAddLine }: Props) {
             placeholder="Buscar serie, material o formato..."
             className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
           />
-          <select
-            value={materialFilter}
-            onChange={(e) => setMaterialFilter(e.target.value)}
-            className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
-          >
-            <option value="">Todos los materiales</option>
-            {materials.map((material) => (
-              <option key={material} value={material}>
-                {material}
-              </option>
-            ))}
-          </select>
+          <MaterialMultiSelect
+            materials={materials}
+            selected={selectedMaterials}
+            onChange={setSelectedMaterials}
+          />
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -112,6 +106,94 @@ export function ProductPickerList({ rows, materials, onAddLine }: Props) {
           <div className="px-4 py-16 text-center text-sm text-neutral-500">No hay productos con estos filtros.</div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function MaterialMultiSelect({
+  materials,
+  selected,
+  onChange,
+}: {
+  materials: string[];
+  selected: string[];
+  onChange: (values: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [open]);
+
+  const label =
+    selected.length === 0
+      ? "Todos los materiales"
+      : selected.length === 1
+        ? selected[0]
+        : `${selected.length} materiales`;
+
+  function toggleMaterial(material: string) {
+    onChange(
+      selected.includes(material) ? selected.filter((m) => m !== material) : [...selected, material],
+    );
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-lg border border-neutral-200 bg-white px-3 py-2 text-left text-sm outline-none focus:border-[var(--practika-primary)]"
+      >
+        <span className="truncate">{label}</span>
+        <span className="ml-2 text-neutral-400">{open ? "▴" : "▾"}</span>
+      </button>
+
+      {open ? (
+        <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+          <div className="flex items-center justify-between border-b border-neutral-100 px-3 py-2">
+            <button
+              type="button"
+              onClick={() => onChange(materials)}
+              className="text-xs font-medium text-[var(--practika-primary)] hover:underline"
+            >
+              Seleccionar todos
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-xs text-neutral-500 hover:underline"
+            >
+              Limpiar
+            </button>
+          </div>
+          {materials.map((material) => {
+            const checked = selected.includes(material);
+            return (
+              <label
+                key={material}
+                className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-neutral-50 ${
+                  checked ? "bg-[var(--practika-highlight)]/60" : ""
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleMaterial(material)}
+                  className="rounded border-neutral-300 text-[var(--practika-primary)]"
+                />
+                <span className="truncate">{material}</span>
+              </label>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

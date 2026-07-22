@@ -4,7 +4,7 @@ import { formatLabelFromCm } from "@/lib/format-display";
 import type { BulkOfferProductRow } from "@/lib/bulk-offers-types";
 import {
   buildColorDisplayLabel,
-  compareColorOptions,
+  compareArticleColorsLikeWeb,
   normalizeColorVariantType,
 } from "@/lib/color-variant-label";
 import { buildStoragePublicUrl } from "@/lib/storage-public-url";
@@ -41,6 +41,7 @@ export async function fetchBulkOfferProductRows(): Promise<BulkOfferProductRow[]
           .from("article_colors")
           .select("id,format_material_id,color_name,variant_type,status,sku,sort_order")
           .in("format_material_id", formatIds)
+          .order("sort_order", { ascending: true })
       : { data: [], error: null };
   if (colorsError) throw new Error(colorsError.message);
 
@@ -50,6 +51,14 @@ export async function fetchBulkOfferProductRows(): Promise<BulkOfferProductRow[]
     const arr = colorsByFormat.get(c.format_material_id) || [];
     arr.push(c);
     colorsByFormat.set(c.format_material_id, arr);
+  }
+  for (const [formatId, arr] of colorsByFormat) {
+    arr.sort(
+      (a, b) =>
+        Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0) ||
+        String(a.color_name || "").localeCompare(String(b.color_name || ""), "es"),
+    );
+    colorsByFormat.set(formatId, arr);
   }
 
   const rows: BulkOfferProductRow[] = [];
@@ -79,7 +88,7 @@ export async function fetchBulkOfferProductRows(): Promise<BulkOfferProductRow[]
 
     const siblings = rawColors.map((c) => ({ name: c.name, variantType: c.variantType }));
     const formatColors = rawColors
-      .sort(compareColorOptions)
+      .sort(compareArticleColorsLikeWeb)
       .map((c) => ({
         ...c,
         displayLabel: buildColorDisplayLabel(c.name, c.variantType, siblings),
