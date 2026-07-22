@@ -3,9 +3,12 @@
 
 import { jsPDF } from "jspdf";
 import { toPng } from "html-to-image";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AmbientImageCarousel } from "@/components/offers/AmbientImageCarousel";
+import { OfferProductPicker, type OfferProductSelection } from "@/components/offers/OfferProductPicker";
 import { TileImage } from "@/components/offers/TileImage";
 import { LivePreviewSelect } from "@/components/offers/LivePreviewSelect";
+import type { BulkOfferProductRow } from "@/lib/bulk-offers-types";
 import {
   logoSrcForVariant,
   type LogoVariant,
@@ -549,6 +552,72 @@ export function OffersBuilder() {
   const [templateTileDisplay, setTemplateTileDisplay] = useState<
     Partial<Record<TemplateId, TemplateTileCustomization>>
   >({});
+  const [productRows, setProductRows] = useState<BulkOfferProductRow[]>([]);
+  const [materials, setMaterials] = useState<string[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productError, setProductError] = useState<string | null>(null);
+  const [ambientImages, setAmbientImages] = useState<string[]>([]);
+  const [ambientIndex, setAmbientIndex] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProducts() {
+      setLoadingProducts(true);
+      setProductError(null);
+      try {
+        const res = await fetch("/api/products");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudieron cargar los productos");
+        if (!cancelled) {
+          setProductRows(data.rows || []);
+          setMaterials(data.materials || []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setProductError(error instanceof Error ? error.message : "Error inesperado");
+        }
+      } finally {
+        if (!cancelled) setLoadingProducts(false);
+      }
+    }
+    loadProducts();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function loadAmbienteImages(seriesSlug: string): Promise<string[]> {
+    try {
+      const res = await fetch(`/api/series?slug=${encodeURIComponent(seriesSlug)}`);
+      const data = await res.json();
+      if (!res.ok) return [];
+      const ambientes = data.series?.ambientes as string[] | undefined;
+      if (ambientes?.length) return ambientes;
+      if (data.series?.heroImage) return [data.series.heroImage as string];
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  async function handleProductSelect(selection: OfferProductSelection) {
+    setSeries(selection.seriesName);
+    setMaterial(selection.material);
+    setFormat(selection.formatLabel);
+    setColor(selection.colorName);
+    setTileSrc(selection.tileImageUrl || "/catalog/placeholder-tile.svg");
+
+    const images = await loadAmbienteImages(selection.seriesSlug);
+    setAmbientImages(images);
+    setAmbientIndex(0);
+    setHeroSrc(images[0] || "/catalog/placeholder-hero.svg");
+  }
+
+  function handleAmbientIndexChange(index: number) {
+    setAmbientIndex(index);
+    const url = ambientImages[index];
+    if (url) setHeroSrc(url);
+  }
 
   function updateGlobalTileDisplay(patch: Partial<TileImageDisplay>) {
     setGlobalTileDisplay((prev) => ({ ...prev, ...patch }));
@@ -625,11 +694,37 @@ export function OffersBuilder() {
       <div>
         <h1 className="text-2xl font-semibold text-neutral-900">Creador de ofertas</h1>
         <p className="mt-2 text-sm text-neutral-600">
-          Sube tus imagenes y descarga cada plantilla en PNG o PDF.
+          Busca un producto del CRM o rellena los campos a mano. Descarga cada plantilla en PNG o PDF.
         </p>
       </div>
 
-      <div className="grid gap-4 rounded border border-neutral-200 bg-neutral-50 p-4 md:grid-cols-2">
+      {loadingProducts ? (
+        <div className="rounded-xl border border-neutral-200 bg-white px-4 py-8 text-center text-sm text-neutral-500">
+          Cargando productos del CRM...
+        </div>
+      ) : productError ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+          {productError}. Puedes seguir usando los campos manuales más abajo.
+        </div>
+      ) : (
+        <OfferProductPicker rows={productRows} materials={materials} onSelect={handleProductSelect} />
+      )}
+
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-neutral-900">Contenido de la oferta</h2>
+          <p className="mt-1 text-xs text-neutral-500">
+            Puedes editar textos e imágenes libremente, también para materiales que no estén en el CRM.
+          </p>
+        </div>
+
+        <AmbientImageCarousel
+          images={ambientImages}
+          selectedIndex={ambientIndex}
+          onSelectIndex={handleAmbientIndexChange}
+        />
+
+        <div className="grid gap-4 rounded border border-neutral-200 bg-neutral-50 p-4 md:grid-cols-2">
         <DropZone
           label="Imagen ambiente"
           previewSrc={heroSrc}
@@ -690,6 +785,7 @@ export function OffersBuilder() {
             ))}
           </select>
         </label>
+        </div>
       </div>
 
       <div className="rounded border border-neutral-200 bg-white p-4">

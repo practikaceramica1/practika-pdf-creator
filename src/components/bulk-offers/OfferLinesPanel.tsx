@@ -30,7 +30,11 @@ export function OfferLinesPanel({
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualLine, setManualLine] = useState<BulkOfferLineDraft>(() => newManualLine());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const manualFileInputRef = useRef<HTMLInputElement>(null);
   const [uploadTargetId, setUploadTargetId] = useState<string | null>(null);
+  const [manualImageLoading, setManualImageLoading] = useState(false);
+  const [lineImageLoadingId, setLineImageLoadingId] = useState<string | null>(null);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
   function updateLine(id: string, patch: Partial<BulkOfferLineDraft>) {
     onLinesChange(lines.map((line) => (line.id === id ? { ...line, ...patch } : line)));
@@ -60,8 +64,29 @@ export function OfferLinesPanel({
   }
 
   async function handleImageUpload(file: File, lineId: string) {
-    const dataUrl = await readFileAsDataUrl(file);
-    updateLine(lineId, { customImageData: dataUrl });
+    setImageUploadError(null);
+    setLineImageLoadingId(lineId);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      updateLine(lineId, { customImageData: dataUrl });
+    } catch {
+      setImageUploadError("No se pudo cargar la imagen. Prueba con otro archivo.");
+    } finally {
+      setLineImageLoadingId(null);
+    }
+  }
+
+  async function handleManualImageUpload(file: File) {
+    setImageUploadError(null);
+    setManualImageLoading(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setManualLine((prev) => ({ ...prev, customImageData: dataUrl }));
+    } catch {
+      setImageUploadError("No se pudo cargar la imagen. Prueba con otro archivo.");
+    } finally {
+      setManualImageLoading(false);
+    }
   }
 
   function addManualLine() {
@@ -69,6 +94,8 @@ export function OfferLinesPanel({
     onLinesChange([...lines, { ...manualLine, id: crypto.randomUUID() }]);
     setManualLine(newManualLine());
     setShowManualForm(false);
+    setImageUploadError(null);
+    if (manualFileInputRef.current) manualFileInputRef.current.value = "";
   }
 
   const grandTotal = lines.reduce((sum, line) => sum + (lineTotal(line) ?? 0), 0);
@@ -192,21 +219,59 @@ export function OfferLinesPanel({
               className="rounded-lg border border-neutral-200 px-3 py-2 text-sm md:col-span-2"
             />
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <label className="cursor-pointer rounded-lg border border-neutral-200 px-3 py-2 text-sm hover:bg-white">
-              Subir imagen
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const dataUrl = await readFileAsDataUrl(file);
-                  setManualLine({ ...manualLine, customImageData: dataUrl });
-                }}
-              />
-            </label>
+          <div className="mt-3 flex flex-wrap items-start gap-4">
+            <div className="flex items-start gap-3">
+              {manualLine.customImageData ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={manualLine.customImageData}
+                  alt=""
+                  className="h-20 w-20 rounded-lg border border-neutral-200 object-cover"
+                />
+              ) : manualImageLoading ? (
+                <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-white text-xs text-neutral-500">
+                  Cargando…
+                </div>
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400">
+                  Sin foto
+                </div>
+              )}
+              <div className="space-y-2">
+                <label
+                  className={`inline-flex cursor-pointer rounded-lg border border-neutral-200 px-3 py-2 text-sm hover:bg-white ${
+                    manualImageLoading ? "pointer-events-none opacity-60" : ""
+                  }`}
+                >
+                  {manualImageLoading ? "Cargando imagen…" : manualLine.customImageData ? "Cambiar imagen" : "Subir imagen"}
+                  <input
+                    ref={manualFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={manualImageLoading}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      await handleManualImageUpload(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {manualLine.customImageData ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualLine((prev) => ({ ...prev, customImageData: "" }));
+                      if (manualFileInputRef.current) manualFileInputRef.current.value = "";
+                    }}
+                    className="block text-xs text-neutral-500 hover:underline"
+                  >
+                    Quitar imagen
+                  </button>
+                ) : null}
+              </div>
+            </div>
             <button
               type="button"
               onClick={addManualLine}
@@ -215,6 +280,9 @@ export function OfferLinesPanel({
               Añadir línea manual
             </button>
           </div>
+          {imageUploadError && showManualForm ? (
+            <p className="mt-2 text-sm text-red-600">{imageUploadError}</p>
+          ) : null}
         </div>
       ) : null}
 
@@ -240,10 +308,15 @@ export function OfferLinesPanel({
         <div className="divide-y divide-neutral-100">
           {lines.map((line) => {
             const image = resolveLineImage(line);
+            const isUploading = lineImageLoadingId === line.id;
             return (
               <div key={line.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1fr)_auto] lg:items-start">
                 <div>
-                  {image ? (
+                  {isUploading ? (
+                    <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-xs text-neutral-500">
+                      Cargando…
+                    </div>
+                  ) : image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={image} alt="" className="h-20 w-20 rounded-lg border border-neutral-200 object-cover" />
                   ) : (
@@ -253,13 +326,14 @@ export function OfferLinesPanel({
                   )}
                   <button
                     type="button"
+                    disabled={isUploading}
                     onClick={() => {
                       setUploadTargetId(line.id);
                       fileInputRef.current?.click();
                     }}
-                    className="mt-2 text-xs text-[var(--practika-primary)] hover:underline"
+                    className="mt-2 text-xs text-[var(--practika-primary)] hover:underline disabled:opacity-60"
                   >
-                    {image ? "Cambiar imagen" : "Subir imagen"}
+                    {isUploading ? "Cargando imagen…" : image ? "Cambiar imagen" : "Subir imagen"}
                   </button>
                   {line.customImageData ? (
                     <button
@@ -341,6 +415,9 @@ export function OfferLinesPanel({
           })}
         </div>
       )}
+      {imageUploadError && !showManualForm ? (
+        <p className="border-t border-neutral-100 px-4 py-3 text-sm text-red-600">{imageUploadError}</p>
+      ) : null}
     </div>
   );
 }
