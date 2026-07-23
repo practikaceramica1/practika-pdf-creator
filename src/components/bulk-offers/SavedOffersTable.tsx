@@ -3,11 +3,25 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { BulkOfferSummary } from "@/lib/bulk-offers-types";
+import { bulkOfferExportUrl, type BulkOfferLineSortMode } from "@/lib/bulk-offer-line-sort";
+import { BulkOfferLineSortSelect } from "@/components/bulk-offers/BulkOfferLineSortSelect";
+import { BulkOfferPdfMenu } from "@/components/bulk-offers/BulkOfferPdfMenu";
+
+const DEFAULT_EXPORT_SORT: BulkOfferLineSortMode = "series";
 
 export function SavedOffersTable() {
   const [offers, setOffers] = useState<BulkOfferSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortByOffer, setSortByOffer] = useState<Record<string, BulkOfferLineSortMode>>({});
+
+  function getOfferSort(offerId: string): BulkOfferLineSortMode {
+    return sortByOffer[offerId] ?? DEFAULT_EXPORT_SORT;
+  }
+
+  function setOfferSort(offerId: string, sort: BulkOfferLineSortMode) {
+    setSortByOffer((prev) => ({ ...prev, [offerId]: sort }));
+  }
 
   async function loadOffers() {
     setLoading(true);
@@ -37,6 +51,11 @@ export function SavedOffersTable() {
       return;
     }
     setOffers((prev) => prev.filter((offer) => offer.id !== id));
+    setSortByOffer((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   }
 
   if (loading) return <p className="text-sm text-neutral-500">Cargando ofertas...</p>;
@@ -68,51 +87,58 @@ export function SavedOffersTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {offers.map((offer) => (
-                <tr key={offer.id} className="hover:bg-neutral-50/70">
-                  <td className="px-4 py-3 font-medium text-neutral-900">{offer.name}</td>
-                  <td className="px-4 py-3 text-neutral-600">
-                    {new Date(offer.createdAt).toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600">{offer.lineCount}</td>
-                  <td className="px-4 py-3 text-neutral-600">{offer.createdBy}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        href={`/ofertas-masivas/${offer.id}`}
-                        className="rounded-lg border border-neutral-200 px-3 py-1.5 hover:bg-neutral-50"
-                      >
-                        Editar
-                      </Link>
-                      <a
-                        href={`/api/bulk-offers/${offer.id}/export/excel`}
-                        className="rounded-lg border border-neutral-200 px-3 py-1.5 hover:bg-neutral-50"
-                      >
-                        Excel
-                      </a>
-                      <a
-                        href={`/api/bulk-offers/${offer.id}/export/pdf`}
-                        className="rounded-lg border border-neutral-200 px-3 py-1.5 hover:bg-neutral-50"
-                      >
-                        PDF
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => deleteOffer(offer.id, offer.name)}
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-red-600 hover:bg-red-50"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {offers.map((offer) => {
+                const sort = getOfferSort(offer.id);
+                return (
+                  <tr key={offer.id} className="hover:bg-neutral-50/70">
+                    <td className="px-4 py-3 font-medium text-neutral-900">{offer.name}</td>
+                    <td className="px-4 py-3 text-neutral-600">
+                      {new Date(offer.createdAt).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-600">{offer.lineCount}</td>
+                    <td className="px-4 py-3 text-neutral-600">{offer.createdBy}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          href={`/ofertas-masivas/${offer.id}`}
+                          className="rounded-lg border border-neutral-200 px-3 py-1.5 hover:bg-neutral-50"
+                        >
+                          Editar
+                        </Link>
+                        <BulkOfferLineSortSelect
+                          value={sort}
+                          onChange={(value) => setOfferSort(offer.id, value)}
+                          compact
+                        />
+                        <a
+                          href={bulkOfferExportUrl(offer.id, "excel", { sort })}
+                          className="rounded-lg border border-neutral-200 px-3 py-1.5 hover:bg-neutral-50"
+                        >
+                          Excel
+                        </a>
+                        <BulkOfferPdfMenu
+                          offerId={offer.id}
+                          sort={sort}
+                          buttonClassName="rounded-lg border border-neutral-200 px-3 py-1.5 hover:bg-neutral-50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => deleteOffer(offer.id, offer.name)}
+                          className="rounded-lg border border-red-200 px-3 py-1.5 text-red-600 hover:bg-red-50"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

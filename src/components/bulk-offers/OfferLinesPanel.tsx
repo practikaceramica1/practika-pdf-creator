@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BulkOfferLineDraft } from "@/lib/bulk-offers-types";
+import {
+  type BulkOfferLineSortMode,
+  sortBulkOfferLines,
+} from "@/lib/bulk-offer-line-sort";
+import { BulkOfferLineSortSelect } from "@/components/bulk-offers/BulkOfferLineSortSelect";
+import { BulkOfferPdfMenu } from "@/components/bulk-offers/BulkOfferPdfMenu";
 import {
   formatDecimalInput,
   isDecimalDraft,
@@ -17,8 +23,7 @@ type Props = {
   onOfferNameChange: (value: string) => void;
   onLinesChange: (lines: BulkOfferLineDraft[]) => void;
   onSave: () => Promise<void>;
-  onExportExcel: () => void;
-  onExportPdf: () => void;
+  onExportExcel: (sort: BulkOfferLineSortMode) => void;
   saving: boolean;
   offerId?: string;
 };
@@ -30,7 +35,6 @@ export function OfferLinesPanel({
   onLinesChange,
   onSave,
   onExportExcel,
-  onExportPdf,
   saving,
   offerId,
 }: Props) {
@@ -44,6 +48,9 @@ export function OfferLinesPanel({
   const [manualImageLoading, setManualImageLoading] = useState(false);
   const [lineImageLoadingId, setLineImageLoadingId] = useState<string | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [lineSort, setLineSort] = useState<BulkOfferLineSortMode>("creation");
+
+  const displayedLines = useMemo(() => sortBulkOfferLines(lines, lineSort), [lines, lineSort]);
 
   function updateLine(id: string, patch: Partial<BulkOfferLineDraft>) {
     onLinesChange(lines.map((line) => (line.id === id ? { ...line, ...patch } : line)));
@@ -149,28 +156,28 @@ export function OfferLinesPanel({
             </button>
             {offerId ? (
               <>
+                <BulkOfferLineSortSelect value={lineSort} onChange={setLineSort} compact />
                 <button
                   type="button"
-                  onClick={onExportExcel}
+                  onClick={() => onExportExcel(lineSort)}
                   className="rounded-lg border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50"
                 >
                   Excel
                 </button>
-                <button
-                  type="button"
-                  onClick={onExportPdf}
-                  className="rounded-lg border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50"
-                >
-                  PDF
-                </button>
+                <BulkOfferPdfMenu offerId={offerId} sort={lineSort} />
               </>
             ) : null}
           </div>
         </div>
-        <p className="mt-2 text-sm text-neutral-500">
-          {lines.length} líneas · Total estimado:{" "}
-          <strong>{grandTotal.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</strong>
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-neutral-500">
+            {lines.length} líneas · Total estimado:{" "}
+            <strong>{grandTotal.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</strong>
+          </p>
+          {lines.length > 0 && !offerId ? (
+            <BulkOfferLineSortSelect value={lineSort} onChange={setLineSort} />
+          ) : null}
+        </div>
       </div>
 
       {showManualForm ? (
@@ -322,9 +329,10 @@ export function OfferLinesPanel({
         </div>
       ) : (
         <div className="divide-y divide-neutral-100">
-          {lines.map((line) => {
+          {displayedLines.map((line) => {
             const image = resolveLineImage(line);
             const isUploading = lineImageLoadingId === line.id;
+            const canReorder = lineSort === "creation";
             return (
               <div key={line.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1fr)_auto] lg:items-start">
                 <div>
@@ -410,12 +418,16 @@ export function OfferLinesPanel({
                 </div>
 
                 <div className="flex gap-2 lg:flex-col">
-                  <button type="button" onClick={() => moveLine(line.id, -1)} className="rounded border px-2 py-1 text-xs">
-                    ↑
-                  </button>
-                  <button type="button" onClick={() => moveLine(line.id, 1)} className="rounded border px-2 py-1 text-xs">
-                    ↓
-                  </button>
+                  {canReorder ? (
+                    <>
+                      <button type="button" onClick={() => moveLine(line.id, -1)} className="rounded border px-2 py-1 text-xs">
+                        ↑
+                      </button>
+                      <button type="button" onClick={() => moveLine(line.id, 1)} className="rounded border px-2 py-1 text-xs">
+                        ↓
+                      </button>
+                    </>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => removeLine(line.id)}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { BulkOfferDetail, BulkOfferLineDraft, BulkOfferProductRow } from "@/lib/bulk-offers-types";
+import { bulkOfferExportUrl, type BulkOfferLineSortMode } from "@/lib/bulk-offer-line-sort";
 import { OfferLinesPanel } from "@/components/bulk-offers/OfferLinesPanel";
 import { ProductPickerList } from "@/components/bulk-offers/ProductPickerList";
 
@@ -71,12 +72,12 @@ export function BulkOffersBuilder({ initialOffer }: Props) {
     }
   }
 
-  function exportFile(kind: "excel" | "pdf") {
+  function exportFile(kind: "excel", sort: BulkOfferLineSortMode) {
     if (!offerId) {
       setMessage("Guarda la oferta antes de exportar");
       return;
     }
-    window.location.href = `/api/bulk-offers/${offerId}/export/${kind}`;
+    window.location.href = bulkOfferExportUrl(offerId, kind, { sort });
   }
 
   return (
@@ -91,8 +92,7 @@ export function BulkOffersBuilder({ initialOffer }: Props) {
         onOfferNameChange={setOfferName}
         onLinesChange={setLines}
         onSave={saveOffer}
-        onExportExcel={() => exportFile("excel")}
-        onExportPdf={() => exportFile("pdf")}
+        onExportExcel={(sort) => exportFile("excel", sort)}
         saving={saving}
         offerId={offerId}
       />

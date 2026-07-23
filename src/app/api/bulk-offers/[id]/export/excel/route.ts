@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/auth";
 import { getBulkOffer } from "@/lib/bulk-offers-db";
+import { resolveBulkOfferForExport } from "@/lib/bulk-offer-export-response";
 import { buildBulkOfferExcel, sanitizeFilename } from "@/lib/export-bulk-offer-excel";
 
 export const runtime = "nodejs";
@@ -8,14 +9,15 @@ export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     await requireAdminUser();
     const { id } = await context.params;
     const offer = await getBulkOffer(id);
     if (!offer) return NextResponse.json({ error: "Oferta no encontrada" }, { status: 404 });
 
-    const buffer = await buildBulkOfferExcel(offer);
+    const exportOffer = resolveBulkOfferForExport(request, offer);
+    const buffer = await buildBulkOfferExcel(exportOffer);
     const filename = `${sanitizeFilename(offer.name)}.xlsx`;
 
     return new Response(new Uint8Array(buffer), {
