@@ -25,6 +25,7 @@ export function OfferProductPicker({ rows, materials, onSelect }: Props) {
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [includeDrafts, setIncludeDrafts] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
+  const [collapsed, setCollapsed] = useState(false);
 
   const filteredRows = useMemo(() => {
     let result = rows;
@@ -59,61 +60,90 @@ export function OfferProductPicker({ rows, materials, onSelect }: Props) {
     return result;
   }, [rows, search, selectedMaterials, includeDrafts, sortBy]);
 
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-neutral-900">Buscar producto del CRM</h2>
-        <p className="mt-1 text-xs text-neutral-500">
-          Elige serie, material, formato y color. Se cargarán la imagen del color y las fotos de ambiente.
-        </p>
-        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar serie, material o formato..."
-            className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
-          />
-          <MaterialMultiSelect materials={materials} selected={selectedMaterials} onChange={setSelectedMaterials} />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
-          >
-            <option value="name-asc">Nombre A-Z</option>
-            <option value="name-desc">Nombre Z-A</option>
-            <option value="material">Material</option>
-            <option value="format-asc">Formato</option>
-          </select>
-          <label className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm">
-            <input
-              type="checkbox"
-              checked={includeDrafts}
-              onChange={(e) => setIncludeDrafts(e.target.checked)}
-              className="rounded border-neutral-300"
-            />
-            Incluir borradores
-          </label>
-        </div>
-        <p className="mt-3 text-sm text-neutral-500">{filteredRows.length} resultados</p>
-      </div>
+  function handleSelect(selection: OfferProductSelection) {
+    onSelect(selection);
+    setCollapsed(true);
+  }
 
-      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
-        <div className="hidden border-b border-neutral-200 bg-neutral-50 px-4 py-3 md:grid md:grid-cols-12 md:gap-3">
-          <div className="col-span-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Serie</div>
-          <div className="col-span-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Material</div>
-          <div className="col-span-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Formato</div>
-          <div className="col-span-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Color</div>
-          <div className="col-span-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Acción</div>
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white shadow-sm">
+      <div className="sticky top-0 z-20 bg-white">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 px-4 py-4">
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-900">Buscar producto del CRM</h2>
+            <p className="mt-1 text-xs text-neutral-500">
+              Elige serie, material, formato y color. Se cargarán la imagen del color y las fotos de ambiente.
+            </p>
+            {collapsed ? (
+              <p className="mt-2 text-sm text-neutral-500">
+                {filteredRows.length} productos disponibles · Oculto para editar la oferta manualmente
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => setCollapsed((value) => !value)}
+            className="shrink-0 rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+          >
+            {collapsed ? "Mostrar productos" : "Ocultar productos"}
+          </button>
         </div>
-        <div className="divide-y divide-neutral-100">
-          {filteredRows.map((row) => (
-            <OfferProductPickerRow key={row.formatMaterialId} row={row} onSelect={onSelect} />
-          ))}
-        </div>
-        {filteredRows.length === 0 ? (
-          <div className="px-4 py-16 text-center text-sm text-neutral-500">No hay productos con estos filtros.</div>
+
+        {!collapsed ? (
+          <div className="border-b border-neutral-200 bg-white px-4 pb-4 pt-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar serie, material o formato..."
+                className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
+              />
+              <MaterialMultiSelect materials={materials} selected={selectedMaterials} onChange={setSelectedMaterials} />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-[var(--practika-primary)]"
+              >
+                <option value="name-asc">Nombre A-Z</option>
+                <option value="name-desc">Nombre Z-A</option>
+                <option value="material">Material</option>
+                <option value="format-asc">Formato</option>
+              </select>
+              <label className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={includeDrafts}
+                  onChange={(e) => setIncludeDrafts(e.target.checked)}
+                  className="rounded border-neutral-300"
+                />
+                Incluir borradores
+              </label>
+            </div>
+            <p className="mt-4 text-sm text-neutral-500">{filteredRows.length} resultados</p>
+
+            <div className="mt-3 hidden border border-neutral-200 border-b-0 bg-neutral-50 md:grid md:grid-cols-12 md:gap-3 md:rounded-t-xl md:py-3">
+              <div className="col-span-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Serie</div>
+              <div className="col-span-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Material</div>
+              <div className="col-span-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Formato</div>
+              <div className="col-span-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Color</div>
+              <div className="col-span-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Acción</div>
+            </div>
+          </div>
         ) : null}
       </div>
+
+      {!collapsed ? (
+        <div className="border-b border-neutral-200">
+          <div className="divide-y divide-neutral-100">
+            {filteredRows.map((row) => (
+              <OfferProductPickerRow key={row.formatMaterialId} row={row} onSelect={handleSelect} />
+            ))}
+          </div>
+          {filteredRows.length === 0 ? (
+            <div className="px-4 py-16 text-center text-sm text-neutral-500">No hay productos con estos filtros.</div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -162,7 +192,7 @@ function MaterialMultiSelect({
       </button>
 
       {open ? (
-        <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
           <div className="flex items-center justify-between border-b border-neutral-100 px-3 py-2">
             <button
               type="button"
