@@ -3,6 +3,7 @@ import "server-only";
 import type { BulkOfferDetail } from "@/lib/bulk-offers-types";
 import { lineTotal, resolveLineImage } from "@/lib/bulk-offers-types";
 import { formatColorNameForExport } from "@/lib/color-variant-label";
+import { lineProductWebUrl, resolveSeriesSlugsForLines } from "@/lib/product-web-url";
 
 export async function fetchImageBuffer(
   url: string,
@@ -44,7 +45,9 @@ export function sanitizeFilename(name: string): string {
     .slice(0, 80) || "oferta-practika";
 }
 
-export function formatOfferSummaryForPdf(offer: BulkOfferDetail) {
+export async function formatOfferSummaryForPdf(offer: BulkOfferDetail) {
+  const slugBySeriesId = await resolveSeriesSlugsForLines(offer.lines);
+
   return offer.lines.map((line) => ({
     series: line.seriesName,
     material: line.material,
@@ -54,6 +57,7 @@ export function formatOfferSummaryForPdf(offer: BulkOfferDetail) {
     pricePerM2: formatMoney(line.pricePerM2),
     total: formatMoney(lineTotal(line)),
     comments: line.comments,
+    webUrl: lineProductWebUrl(line, slugBySeriesId),
     image: resolveLineImage(line),
   }));
 }

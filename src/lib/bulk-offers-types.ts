@@ -38,6 +38,7 @@ export type BulkOfferLineDraft = {
   crmSeriesId?: string;
   crmFormatMaterialId?: string;
   crmColorId?: string;
+  seriesSlug?: string;
   seriesStatus?: string;
 };
 
@@ -121,6 +122,7 @@ export function productRowToLine(
     crmSeriesId: row.seriesId,
     crmFormatMaterialId: row.formatMaterialId,
     crmColorId: color.id,
+    seriesSlug: row.seriesSlug,
     seriesStatus: row.seriesStatus,
   };
 }

@@ -15,7 +15,9 @@ export default async function BulkOfferPrintPage({ searchParams }: PageProps) {
   const offer = await getBulkOffer(offerId);
   if (!offer) notFound();
 
+  const lines = await formatOfferSummaryForPdf(offer);
+
   return (
-    <BulkOfferPrintDocument title={offer.name} createdAt={offer.createdAt} lines={formatOfferSummaryForPdf(offer)} />
+    <BulkOfferPrintDocument title={offer.name} createdAt={offer.createdAt} lines={lines} />
   );
 }

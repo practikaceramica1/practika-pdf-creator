@@ -61,16 +61,17 @@ function drawBrandHeader(doc: jsPDF, offer: BulkOfferDetail) {
 }
 
 export async function buildBulkOfferPdf(offer: BulkOfferDetail): Promise<Buffer> {
-  const lines = formatOfferSummaryForPdf(offer);
+  const lines = await formatOfferSummaryForPdf(offer);
   const images = await loadLineImages(offer);
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const tableStartY = drawBrandHeader(doc, offer);
+  const webLinkColIndex = 7;
 
   autoTable(doc, {
     startY: tableStartY,
     margin: { left: MARGIN, right: MARGIN, bottom: 12 },
-    head: [["", "Serie", "Material", "Formato", "Color", "m²", "€/m²", "Total €", "Comentarios"]],
+    head: [["", "Serie", "Material", "Formato", "Color", "m²", "€/m²", "Enlace web", "Comentarios"]],
     body: lines.map((line) => [
       "",
       line.series,
@@ -79,7 +80,7 @@ export async function buildBulkOfferPdf(offer: BulkOfferDetail): Promise<Buffer>
       line.color,
       line.squareMeters,
       line.pricePerM2,
-      line.total,
+      line.webUrl ? "Ver en web" : "",
       line.comments,
     ]),
     theme: "grid",
@@ -111,10 +112,18 @@ export async function buildBulkOfferPdf(offer: BulkOfferDetail): Promise<Buffer>
       1: { cellWidth: 28, fontStyle: "bold" },
       5: { halign: "right" },
       6: { halign: "right" },
-      7: { halign: "right", fontStyle: "bold", textColor: rgb(PRACTIKA_BRAND.navy.rgb) },
-      8: { cellWidth: 42 },
+      7: { cellWidth: 24, halign: "center", valign: "middle", textColor: rgb(PRACTIKA_BRAND.navy.rgb), fontStyle: "bold" },
+      8: { cellWidth: 36 },
     },
     didDrawCell: (data) => {
+      if (data.section === "body" && data.column.index === webLinkColIndex) {
+        const url = lines[data.row.index]?.webUrl;
+        if (url) {
+          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+        }
+        return;
+      }
+
       if (data.section !== "body" || data.column.index !== 0) return;
       const image = images[data.row.index];
       if (!image) return;

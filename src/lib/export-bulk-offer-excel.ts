@@ -2,9 +2,10 @@ import "server-only";
 
 import ExcelJS from "exceljs";
 import type { BulkOfferDetail } from "@/lib/bulk-offers-types";
-import { lineTotal, resolveLineImage } from "@/lib/bulk-offers-types";
+import { resolveLineImage } from "@/lib/bulk-offers-types";
 import { fetchImageBuffer } from "@/lib/export-bulk-offer-shared";
 import { formatColorNameForExport } from "@/lib/color-variant-label";
+import { lineProductWebUrl, resolveSeriesSlugsForLines } from "@/lib/product-web-url";
 import {
   EXPORT_FONT,
   EXPORT_HEADER_LOGO_HEIGHT_PX,
@@ -58,7 +59,7 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
     { width: 22 },
     { width: 11 },
     { width: 11 },
-    { width: 13 },
+    { width: 28 },
     { width: 34 },
   ];
 
@@ -115,7 +116,17 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
   sheet.getRow(8).height = 8;
 
   const headerRow = sheet.getRow(HEADER_ROW);
-  headerRow.values = ["Imagen", "Serie", "Material", "Formato", "Color", "m²", "€/m²", "Total €", "Comentarios"];
+  headerRow.values = [
+    "Imagen",
+    "Serie",
+    "Material",
+    "Formato",
+    "Color",
+    "m²",
+    "€/m²",
+    "Enlace web",
+    "Comentarios",
+  ];
   headerRow.height = 26;
   headerRow.eachCell((cell) => {
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: PRACTIKA_BRAND.navyBanner.argb } };
@@ -123,6 +134,8 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
     cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     thinBorder(cell, PRACTIKA_BRAND.navy.argb);
   });
+
+  const slugBySeriesId = await resolveSeriesSlugsForLines(offer.lines);
 
   let rowIndex = DATA_START;
   for (const line of offer.lines) {
@@ -134,7 +147,6 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
     row.getCell(5).value = formatColorNameForExport(line.colorName);
     row.getCell(6).value = line.squareMeters ?? "";
     row.getCell(7).value = line.pricePerM2 ?? "";
-    row.getCell(8).value = lineTotal(line) ?? "";
     row.getCell(9).value = line.comments;
 
     const alt = rowIndex % 2 === 0;
@@ -142,16 +154,24 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
       const cell = row.getCell(col);
       if (col === 1) {
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: PRACTIKA_BRAND.white.argb } };
+      } else if (col === 8) {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: alt ? PRACTIKA_BRAND.rowAlt.argb : PRACTIKA_BRAND.white.argb },
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+        thinBorder(cell);
       } else {
         cell.font = {
           name: EXPORT_FONT,
           size: 10,
-          bold: col === 2 || col === 8,
-          color: { argb: col === 8 ? PRACTIKA_BRAND.navy.argb : PRACTIKA_BRAND.text.argb },
+          bold: col === 2,
+          color: { argb: PRACTIKA_BRAND.text.argb },
         };
         cell.alignment = {
           vertical: "middle",
-          horizontal: col >= 6 && col <= 8 ? "right" : "left",
+          horizontal: col >= 6 && col <= 7 ? "right" : "left",
           wrapText: true,
         };
         cell.fill = {
@@ -165,7 +185,21 @@ export async function buildBulkOfferExcel(offer: BulkOfferDetail): Promise<Buffe
 
     row.getCell(6).numFmt = "#,##0.00";
     row.getCell(7).numFmt = '#,##0.00" €"';
-    row.getCell(8).numFmt = '#,##0.00" €"';
+
+    const webUrl = lineProductWebUrl(line, slugBySeriesId);
+    const webCell = row.getCell(8);
+    if (webUrl) {
+      webCell.value = { text: "Ver en web", hyperlink: webUrl };
+      webCell.font = {
+        name: EXPORT_FONT,
+        size: 10,
+        color: { argb: "FF1A56A0" },
+        underline: true,
+      };
+      webCell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    } else {
+      webCell.value = "";
+    }
 
     const imageUrl = resolveLineImage(line);
     const image = await fetchImageBuffer(imageUrl);
