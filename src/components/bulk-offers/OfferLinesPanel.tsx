@@ -1,8 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BulkOfferLineDraft } from "@/lib/bulk-offers-types";
-import { lineTotal, newManualLine, resolveLineImage } from "@/lib/bulk-offers-types";
+import {
+  formatDecimalInput,
+  isDecimalDraft,
+  lineTotal,
+  newManualLine,
+  parseDecimalInput,
+  resolveLineImage,
+} from "@/lib/bulk-offers-types";
 
 type Props = {
   lines: BulkOfferLineDraft[];
@@ -29,6 +36,8 @@ export function OfferLinesPanel({
 }: Props) {
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualLine, setManualLine] = useState<BulkOfferLineDraft>(() => newManualLine());
+  const [manualSquareMeters, setManualSquareMeters] = useState("");
+  const [manualPricePerM2, setManualPricePerM2] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const manualFileInputRef = useRef<HTMLInputElement>(null);
   const [uploadTargetId, setUploadTargetId] = useState<string | null>(null);
@@ -91,8 +100,15 @@ export function OfferLinesPanel({
 
   function addManualLine() {
     if (!manualLine.seriesName.trim()) return;
-    onLinesChange([...lines, { ...manualLine, id: crypto.randomUUID() }]);
+    const squareMeters = parseDecimalInput(manualSquareMeters);
+    const pricePerM2 = parseDecimalInput(manualPricePerM2);
+    onLinesChange([
+      ...lines,
+      { ...manualLine, id: crypto.randomUUID(), squareMeters, pricePerM2 },
+    ]);
     setManualLine(newManualLine());
+    setManualSquareMeters("");
+    setManualPricePerM2("");
     setShowManualForm(false);
     setImageUploadError(null);
     if (manualFileInputRef.current) manualFileInputRef.current.value = "";
@@ -191,24 +207,24 @@ export function OfferLinesPanel({
               className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
             />
             <input
-              value={manualLine.squareMeters ?? ""}
-              onChange={(e) =>
-                setManualLine({
-                  ...manualLine,
-                  squareMeters: e.target.value ? Number(e.target.value.replace(",", ".")) : null,
-                })
-              }
+              value={manualSquareMeters}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (!isDecimalDraft(next)) return;
+                setManualSquareMeters(next);
+              }}
+              inputMode="decimal"
               placeholder="m²"
               className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
             />
             <input
-              value={manualLine.pricePerM2 ?? ""}
-              onChange={(e) =>
-                setManualLine({
-                  ...manualLine,
-                  pricePerM2: e.target.value ? Number(e.target.value.replace(",", ".")) : null,
-                })
-              }
+              value={manualPricePerM2}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (!isDecimalDraft(next)) return;
+                setManualPricePerM2(next);
+              }}
+              inputMode="decimal"
               placeholder="€/m²"
               className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
             />
@@ -360,17 +376,15 @@ export function OfferLinesPanel({
                     }
                   />
                   <Field label="Color" value={line.colorName} onChange={(v) => updateLine(line.id, { colorName: v })} />
-                  <Field
+                  <DecimalField
                     label="m²"
-                    value={line.squareMeters?.toString() || ""}
-                    onChange={(v) =>
-                      updateLine(line.id, { squareMeters: v ? Number(v.replace(",", ".")) : null })
-                    }
+                    value={line.squareMeters}
+                    onChange={(v) => updateLine(line.id, { squareMeters: v })}
                   />
-                  <Field
+                  <DecimalField
                     label="€/m²"
-                    value={line.pricePerM2?.toString() || ""}
-                    onChange={(v) => updateLine(line.id, { pricePerM2: v ? Number(v.replace(",", ".")) : null })}
+                    value={line.pricePerM2}
+                    onChange={(v) => updateLine(line.id, { pricePerM2: v })}
                   />
                   <div className="md:col-span-2">
                     <label className="mb-1 block text-xs font-medium text-neutral-500">Comentarios</label>
@@ -437,6 +451,60 @@ function Field({
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+      />
+    </div>
+  );
+}
+
+function DecimalField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (value: number | null) => void;
+}) {
+  const [draft, setDraft] = useState(() => formatDecimalInput(value));
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!focusedRef.current) {
+      setDraft(formatDecimalInput(value));
+    }
+  }, [value]);
+
+  function commitDraft(next: string) {
+    setDraft(next);
+    if (next === "" || next === "." || next === "," || next === "-") {
+      onChange(null);
+      return;
+    }
+    if (/[.,]$/.test(next)) return;
+    onChange(parseDecimalInput(next));
+  }
+
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-neutral-500">{label}</label>
+      <input
+        value={draft}
+        inputMode="decimal"
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+          const parsed = parseDecimalInput(draft);
+          setDraft(formatDecimalInput(parsed));
+          onChange(parsed);
+        }}
+        onChange={(e) => {
+          const next = e.target.value;
+          if (!isDecimalDraft(next)) return;
+          commitDraft(next);
+        }}
         className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"
       />
     </div>

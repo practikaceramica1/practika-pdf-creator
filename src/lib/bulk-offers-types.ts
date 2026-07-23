@@ -63,6 +63,24 @@ export function lineTotal(line: Pick<BulkOfferLineDraft, "squareMeters" | "price
   return line.squareMeters * line.pricePerM2;
 }
 
+const DECIMAL_DRAFT_RE = /^-?\d*(?:[.,]\d*)?$/;
+
+/** Permite escribir decimales con `.` o `,` sin perder el separador a mitad de tecleo. */
+export function isDecimalDraft(value: string): boolean {
+  return value === "" || DECIMAL_DRAFT_RE.test(value);
+}
+
+export function parseDecimalInput(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "." || trimmed === "," || trimmed === "-") return null;
+  const parsed = Number(trimmed.replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function formatDecimalInput(value: number | null): string {
+  return value == null ? "" : String(value);
+}
+
 export function newManualLine(): BulkOfferLineDraft {
   return {
     id: crypto.randomUUID(),
