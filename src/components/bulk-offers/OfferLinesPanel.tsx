@@ -1,5 +1,22 @@
 "use client";
 
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  type DragEndEvent,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BulkOfferLineDraft } from "@/lib/bulk-offers-types";
 import {
@@ -49,8 +66,15 @@ export function OfferLinesPanel({
   const [lineImageLoadingId, setLineImageLoadingId] = useState<string | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [lineSort, setLineSort] = useState<BulkOfferLineSortMode>("creation");
+  const canReorder = lineSort === "creation";
 
   const displayedLines = useMemo(() => sortBulkOfferLines(lines, lineSort), [lines, lineSort]);
+  const lineIds = useMemo(() => displayedLines.map((line) => line.id), [displayedLines]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   function updateLine(id: string, patch: Partial<BulkOfferLineDraft>) {
     onLinesChange(lines.map((line) => (line.id === id ? { ...line, ...patch } : line)));
@@ -60,14 +84,14 @@ export function OfferLinesPanel({
     onLinesChange(lines.filter((line) => line.id !== id));
   }
 
-  function moveLine(id: string, direction: -1 | 1) {
-    const index = lines.findIndex((line) => line.id === id);
-    if (index < 0) return;
-    const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= lines.length) return;
-    const next = [...lines];
-    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-    onLinesChange(next);
+  function handleDragEnd(event: DragEndEvent) {
+    if (!canReorder) return;
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = lines.findIndex((line) => line.id === active.id);
+    const newIndex = lines.findIndex((line) => line.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    onLinesChange(arrayMove(lines, oldIndex, newIndex));
   }
 
   async function readFileAsDataUrl(file: File): Promise<string> {
@@ -173,6 +197,9 @@ export function OfferLinesPanel({
           <p className="text-sm text-neutral-500">
             {lines.length} líneas · Total estimado:{" "}
             <strong>{grandTotal.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</strong>
+            {canReorder && lines.length > 1 ? (
+              <span className="ml-2 text-neutral-400">· Arrastra ⋮⋮ para reordenar</span>
+            ) : null}
           </p>
           {lines.length > 0 && !offerId ? (
             <BulkOfferLineSortSelect value={lineSort} onChange={setLineSort} />
@@ -328,122 +355,177 @@ export function OfferLinesPanel({
           Añade líneas desde el listado de productos o crea una línea manual.
         </div>
       ) : (
-        <div className="divide-y divide-neutral-100">
-          {displayedLines.map((line) => {
-            const image = resolveLineImage(line);
-            const isUploading = lineImageLoadingId === line.id;
-            const canReorder = lineSort === "creation";
-            return (
-              <div key={line.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1fr)_auto] lg:items-start">
-                <div>
-                  {isUploading ? (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-xs text-neutral-500">
-                      Cargando…
-                    </div>
-                  ) : image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={image} alt="" className="h-20 w-20 rounded-lg border border-neutral-200 object-cover" />
-                  ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400">
-                      Sin foto
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    disabled={isUploading}
-                    onClick={() => {
-                      setUploadTargetId(line.id);
-                      fileInputRef.current?.click();
-                    }}
-                    className="mt-2 text-xs text-[var(--practika-primary)] hover:underline disabled:opacity-60"
-                  >
-                    {isUploading ? "Cargando imagen…" : image ? "Cambiar imagen" : "Subir imagen"}
-                  </button>
-                  {line.customImageData ? (
-                    <button
-                      type="button"
-                      onClick={() => updateLine(line.id, { customImageData: "" })}
-                      className="mt-1 block text-xs text-neutral-500 hover:underline"
-                    >
-                      Restaurar CRM
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-                  <Field label="Serie" value={line.seriesName} onChange={(v) => updateLine(line.id, { seriesName: v })} />
-                  <Field label="Material" value={line.material} onChange={(v) => updateLine(line.id, { material: v })} />
-                  <Field
-                    label="Formato"
-                    value={line.formatLabel}
-                    onChange={(v) =>
-                      updateLine(line.id, {
-                        formatLabel: v,
-                        formatDisplay: v ? `${v.replace("x", " × ")} cm` : "",
-                      })
-                    }
-                  />
-                  <Field label="Color" value={line.colorName} onChange={(v) => updateLine(line.id, { colorName: v })} />
-                  <DecimalField
-                    label="m²"
-                    value={line.squareMeters}
-                    onChange={(v) => updateLine(line.id, { squareMeters: v })}
-                  />
-                  <DecimalField
-                    label="€/m²"
-                    value={line.pricePerM2}
-                    onChange={(v) => updateLine(line.id, { pricePerM2: v })}
-                  />
-                  <div className="md:col-span-2">
-                    <label className="mb-1 block text-xs font-medium text-neutral-500">Comentarios</label>
-                    <input
-                      value={line.comments}
-                      onChange={(e) => updateLine(line.id, { comments: e.target.value })}
-                      className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <div className="flex items-end text-sm text-neutral-600">
-                    Total:{" "}
-                    <strong className="ml-1">
-                      {(lineTotal(line) ?? 0).toLocaleString("es-ES", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}{" "}
-                      €
-                    </strong>
-                    {line.isManual ? (
-                      <span className="ml-2 rounded bg-neutral-100 px-2 py-0.5 text-[10px] uppercase">Manual</span>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="flex gap-2 lg:flex-col">
-                  {canReorder ? (
-                    <>
-                      <button type="button" onClick={() => moveLine(line.id, -1)} className="rounded border px-2 py-1 text-xs">
-                        ↑
-                      </button>
-                      <button type="button" onClick={() => moveLine(line.id, 1)} className="rounded border px-2 py-1 text-xs">
-                        ↓
-                      </button>
-                    </>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => removeLine(line.id)}
-                    className="rounded border border-red-200 px-2 py-1 text-xs text-red-600"
-                  >
-                    Quitar
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={lineIds} strategy={verticalListSortingStrategy} disabled={!canReorder}>
+            <div className="divide-y divide-neutral-100">
+              {displayedLines.map((line) => (
+                <SortableOfferLine
+                  key={line.id}
+                  line={line}
+                  canReorder={canReorder}
+                  isUploading={lineImageLoadingId === line.id}
+                  onUpdate={(patch) => updateLine(line.id, patch)}
+                  onRemove={() => removeLine(line.id)}
+                  onPickImage={() => {
+                    setUploadTargetId(line.id);
+                    fileInputRef.current?.click();
+                  }}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
       {imageUploadError && !showManualForm ? (
         <p className="border-t border-neutral-100 px-4 py-3 text-sm text-red-600">{imageUploadError}</p>
       ) : null}
+    </div>
+  );
+}
+
+function SortableOfferLine({
+  line,
+  canReorder,
+  isUploading,
+  onUpdate,
+  onRemove,
+  onPickImage,
+}: {
+  line: BulkOfferLineDraft;
+  canReorder: boolean;
+  isUploading: boolean;
+  onUpdate: (patch: Partial<BulkOfferLineDraft>) => void;
+  onRemove: () => void;
+  onPickImage: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: line.id,
+    disabled: !canReorder,
+  });
+  const image = resolveLineImage(line);
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 20 : undefined,
+    position: isDragging ? ("relative" as const) : undefined,
+    boxShadow: isDragging ? "0 12px 28px rgba(15, 23, 42, 0.12)" : undefined,
+    backgroundColor: isDragging ? "#fff" : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`grid gap-4 px-4 py-4 lg:grid-cols-[28px_88px_minmax(0,1fr)_auto] lg:items-start ${
+        isDragging ? "opacity-95" : ""
+      }`}
+    >
+      <div className="flex items-start justify-center pt-1">
+        {canReorder ? (
+          <button
+            type="button"
+            className="cursor-grab touch-none rounded px-1 py-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 active:cursor-grabbing"
+            aria-label="Arrastrar línea"
+            title="Arrastrar para reordenar"
+            {...attributes}
+            {...listeners}
+          >
+            ⋮⋮
+          </button>
+        ) : (
+          <span className="w-5" aria-hidden />
+        )}
+      </div>
+
+      <div>
+        {isUploading ? (
+          <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-xs text-neutral-500">
+            Cargando…
+          </div>
+        ) : image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt="" className="h-20 w-20 rounded-lg border border-neutral-200 object-cover" />
+        ) : (
+          <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400">
+            Sin foto
+          </div>
+        )}
+        <button
+          type="button"
+          disabled={isUploading}
+          onClick={onPickImage}
+          className="mt-2 text-xs text-[var(--practika-primary)] hover:underline disabled:opacity-60"
+        >
+          {isUploading ? "Cargando imagen…" : image ? "Cambiar imagen" : "Subir imagen"}
+        </button>
+        {line.customImageData ? (
+          <button
+            type="button"
+            onClick={() => onUpdate({ customImageData: "" })}
+            className="mt-1 block text-xs text-neutral-500 hover:underline"
+          >
+            Restaurar CRM
+          </button>
+        ) : null}
+      </div>
+
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+        <Field label="Serie" value={line.seriesName} onChange={(v) => onUpdate({ seriesName: v })} />
+        <Field label="Material" value={line.material} onChange={(v) => onUpdate({ material: v })} />
+        <Field
+          label="Formato"
+          value={line.formatLabel}
+          onChange={(v) =>
+            onUpdate({
+              formatLabel: v,
+              formatDisplay: v ? `${v.replace("x", " × ")} cm` : "",
+            })
+          }
+        />
+        <Field label="Color" value={line.colorName} onChange={(v) => onUpdate({ colorName: v })} />
+        <DecimalField
+          label="m²"
+          value={line.squareMeters}
+          onChange={(v) => onUpdate({ squareMeters: v })}
+        />
+        <DecimalField
+          label="€/m²"
+          value={line.pricePerM2}
+          onChange={(v) => onUpdate({ pricePerM2: v })}
+        />
+        <div className="md:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-neutral-500">Comentarios</label>
+          <input
+            value={line.comments}
+            onChange={(e) => onUpdate({ comments: e.target.value })}
+            className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="flex items-end text-sm text-neutral-600">
+          Total:{" "}
+          <strong className="ml-1">
+            {(lineTotal(line) ?? 0).toLocaleString("es-ES", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}{" "}
+            €
+          </strong>
+          {line.isManual ? (
+            <span className="ml-2 rounded bg-neutral-100 px-2 py-0.5 text-[10px] uppercase">Manual</span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex gap-2 lg:flex-col">
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded border border-red-200 px-2 py-1 text-xs text-red-600"
+        >
+          Quitar
+        </button>
+      </div>
     </div>
   );
 }
